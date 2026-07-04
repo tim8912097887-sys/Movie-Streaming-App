@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/tim8912097887-sys/server/internal/shared/response"
 )
 
 type ApiConfig struct {
@@ -23,9 +24,9 @@ func (a *Api) Mount() http.Handler {
 	router := gin.Default()
 
 	router.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status": "ok",
-		})
+		c.JSON(http.StatusOK, response.NewSuccessResponse(map[string]string{
+			"status": "OK",
+		}))
 	})
 
 	return router
