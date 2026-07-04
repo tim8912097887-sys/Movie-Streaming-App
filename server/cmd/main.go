@@ -28,7 +28,7 @@ func main() {
 		syscall.SIGTERM,
 	)
 	defer stop()
-	apiConfig := api.ApiConfig{Addr: envConfigs.Addr, Logger: logger}
+	apiConfig := api.ApiConfig{Logger: logger, EnvConfigs: envConfigs}
 	api := api.Api{Config: apiConfig}
 	api.Run(ctx, api.Mount(), 8*time.Second)
 }

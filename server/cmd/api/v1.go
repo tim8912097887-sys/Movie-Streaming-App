@@ -8,12 +8,15 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/tim8912097887-sys/server/internal/auth"
+	"github.com/tim8912097887-sys/server/internal/configs"
 	"github.com/tim8912097887-sys/server/internal/shared/response"
+	"github.com/tim8912097887-sys/server/internal/users"
 )
 
 type ApiConfig struct {
-	Addr string
 	Logger *slog.Logger
+	EnvConfigs configs.Configs
 }
 
 type Api struct {
@@ -29,12 +32,24 @@ func (a *Api) Mount() http.Handler {
 		}))
 	})
 
+	v1Router :=router.Group("/api/v1")
+
+	// Register user routes
+	userRouter := v1Router.Group("/users")
+	passwordService := auth.NewPasswordService()
+	jwtService := auth.NewJWTService()
+	userServiceConfig := users.UserServiceConfig{PasswordService: passwordService, JWTService: jwtService, EnvConfigs: a.Config.EnvConfigs}
+	userService := users.NewUserService(userServiceConfig)
+	userHandlerConfig := users.UserHandlerConfig{UserService: userService, Logger: a.Config.Logger}
+	userHandler := users.NewUserHandler(userHandlerConfig)
+	userHandler.RegisterRoutes(userRouter)
+	
 	return router
 }
 
 func (a *Api) Run(ctx context.Context, h http.Handler, shutdownTimeout time.Duration) error {
 	server := &http.Server{
-		Addr:    a.Config.Addr,
+		Addr:    a.Config.EnvConfigs.Addr,
 		Handler: h,
 		ReadTimeout:       5 * time.Second,
         ReadHeaderTimeout: 2 * time.Second,
@@ -46,7 +61,7 @@ func (a *Api) Run(ctx context.Context, h http.Handler, shutdownTimeout time.Dura
 	serverErrorCh := make(chan error, 1)
 	// Start the server with goroutine
 	go func() {
-		a.Config.Logger.Info("starting server",slog.String("address", a.Config.Addr))
+		a.Config.Logger.Info("starting server",slog.String("address", a.Config.EnvConfigs.Addr))
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			a.Config.Logger.Error("failed to start server",slog.Any("error", err))
 			serverErrorCh <- err
