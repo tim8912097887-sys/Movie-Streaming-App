@@ -15,7 +15,6 @@ type UserService interface {
     loginUser(ctx context.Context, user LoginUserSchema) (TokenResponse, error)
 	logoutUser(ctx context.Context, userId string,tokenVersion int) error
 	refreshToken(ctx context.Context, userId string,tokenVersion int) (TokenResponse, error)
-	getAllUsers(ctx context.Context) ([]UserDTO, error)
 }
 
 type UserHandlerConfig struct {
@@ -37,7 +36,6 @@ func NewUserHandler(userHandlerConfig UserHandlerConfig) *handler {
 
 func (h *handler) RegisterRoutes(r *gin.RouterGroup,refreshTokenMiddleware gin.HandlerFunc) {
 	r.POST("/register",h.CreateUser)
-	r.GET("/",h.GetUsers)
 	r.POST("/login",h.LoginUser)
 	r.POST("/logout",refreshTokenMiddleware,h.LogoutUser)
 	r.POST("/refresh",refreshTokenMiddleware,h.RefreshToken)
@@ -198,19 +196,6 @@ func (h *handler) RefreshToken(c *gin.Context) {
 	// Set httpOnly cookie for refresh token
 	setCookie(c,tokenResponse.RefreshToken,7*24*60*60)
 	c.JSON(http.StatusOK, response.NewSuccessResponse(accessTokenResponse))
-}
-
-// For debug
-func (h *handler) GetUsers(c *gin.Context) {
-
-	users, err := h.userService.getAllUsers(c.Request.Context())
-	if err != nil {
-		h.logger.Error("Failed to get users", slog.Any("error", err))
-		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", err.Error()))
-		return
-	}
-
-	c.JSON(http.StatusOK, response.NewSuccessResponse(users))
 }
 
 func setCookie(c *gin.Context, value string,expiredTime int) {

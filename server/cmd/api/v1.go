@@ -13,6 +13,7 @@ import (
 	"github.com/tim8912097887-sys/server/internal/shared/middlewares"
 	"github.com/tim8912097887-sys/server/internal/shared/response"
 	"github.com/tim8912097887-sys/server/internal/users"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 type ApiConfig struct {
@@ -24,7 +25,7 @@ type Api struct {
 	Config ApiConfig
 }
 
-func (a *Api) Mount() http.Handler {
+func (a *Api) Mount(dbClient *mongo.Client) http.Handler {
 	router := gin.Default()
 
 	router.GET("/health", func(c *gin.Context) {
@@ -40,7 +41,9 @@ func (a *Api) Mount() http.Handler {
 	passwordService := auth.NewPasswordService()
 	jwtService := auth.NewJWTService()
 	refreshTokenMiddleware := middlewares.RefreshTokenMiddleware(jwtService, a.Config.EnvConfigs.RefreshTokenSecret)
-	userServiceConfig := users.UserServiceConfig{PasswordService: passwordService, JWTService: jwtService, EnvConfigs: a.Config.EnvConfigs}
+	userCollection := dbClient.Database(a.Config.EnvConfigs.DbName).Collection("users")
+	userRepository := users.NewUserRepository(userCollection)
+	userServiceConfig := users.UserServiceConfig{PasswordService: passwordService, JWTService: jwtService, EnvConfigs: a.Config.EnvConfigs, Repository: userRepository}
 	userService := users.NewUserService(userServiceConfig)
 	userHandlerConfig := users.UserHandlerConfig{UserService: userService, Logger: a.Config.Logger}
 	userHandler := users.NewUserHandler(userHandlerConfig)

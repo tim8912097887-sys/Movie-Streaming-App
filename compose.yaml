@@ -1,0 +1,43 @@
+services:
+  mongo-server:
+    image: mongo:8.0
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: myuser
+      MONGO_INITDB_ROOT_PASSWORD: mypassword
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mongosh",
+          "--username",
+          "myuser",
+          "--password",
+          "mypassword",
+          "--authenticationDatabase",
+          "admin",
+          "--eval",
+          "db.adminCommand('ping')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - 8080:8080
+    depends_on:
+      mongo-server:
+        condition: service_healthy
+    env_file:
+      - ./server/.env
+    restart: always
+volumes:
+  mongo-data:

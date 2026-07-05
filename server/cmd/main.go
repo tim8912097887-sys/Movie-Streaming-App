@@ -10,6 +10,7 @@ import (
 
 	"github.com/tim8912097887-sys/server/cmd/api"
 	"github.com/tim8912097887-sys/server/internal/configs"
+	"github.com/tim8912097887-sys/server/internal/db"
 )
 
 func main() {
@@ -28,7 +29,24 @@ func main() {
 		syscall.SIGTERM,
 	)
 	defer stop()
+
+	// Initialize db
+	dbClient, err := db.ConnectDB(ctx, envConfigs.DbUrl)
+	if err != nil {
+		logger.Error("Failed to connect to db", slog.Any("error", err))
+		os.Exit(1)
+		return
+	}
+	logger.Info("Connected to db", slog.String("name", envConfigs.DbName))
+	
+	defer func() {
+        logger.Info("Disconnecting from MongoDB...")
+        if err := dbClient.Disconnect(context.Background()); err != nil {
+            logger.Error("Failed to cleanly disconnect MongoDB", slog.Any("error", err))
+        }
+    }()
+	
 	apiConfig := api.ApiConfig{Logger: logger, EnvConfigs: envConfigs}
 	api := api.Api{Config: apiConfig}
-	api.Run(ctx, api.Mount(), 8*time.Second)
+	api.Run(ctx, api.Mount(dbClient), 8*time.Second)
 }
