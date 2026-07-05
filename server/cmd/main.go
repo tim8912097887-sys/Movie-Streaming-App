@@ -38,14 +38,14 @@ func main() {
 		return
 	}
 	logger.Info("Connected to db", slog.String("name", envConfigs.DbName))
-	
+
 	defer func() {
-        logger.Info("Disconnecting from MongoDB...")
-        if err := dbClient.Disconnect(context.Background()); err != nil {
-            logger.Error("Failed to cleanly disconnect MongoDB", slog.Any("error", err))
-        }
-    }()
-	
+		logger.Info("Disconnecting from MongoDB...")
+		if err := dbClient.Disconnect(context.Background()); err != nil {
+			logger.Error("Failed to cleanly disconnect MongoDB", slog.Any("error", err))
+		}
+	}()
+
 	apiConfig := api.ApiConfig{Logger: logger, EnvConfigs: envConfigs}
 	api := api.Api{Config: apiConfig}
 	api.Run(ctx, api.Mount(dbClient), 8*time.Second)

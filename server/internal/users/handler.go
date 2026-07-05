@@ -22,26 +22,26 @@ type UserHandlerConfig struct {
 	Logger *slog.Logger
 }
 
-type handler struct {
+type Handler struct {
 	userService UserService
 	logger *slog.Logger
 }
 
-func NewUserHandler(userHandlerConfig UserHandlerConfig) *handler {
-	return &handler{
+func NewUserHandler(userHandlerConfig UserHandlerConfig) *Handler {
+	return &Handler{
 		userService: userHandlerConfig.UserService,
 		logger: userHandlerConfig.Logger,
 	}
 }
 
-func (h *handler) RegisterRoutes(r *gin.RouterGroup,refreshTokenMiddleware gin.HandlerFunc) {
+func (h *Handler) RegisterRoutes(r *gin.RouterGroup,refreshTokenMiddleware gin.HandlerFunc) {
 	r.POST("/register",h.CreateUser)
 	r.POST("/login",h.LoginUser)
 	r.POST("/logout",refreshTokenMiddleware,h.LogoutUser)
 	r.POST("/refresh",refreshTokenMiddleware,h.RefreshToken)
 }
 
-func (h *handler) CreateUser(c *gin.Context) {
+func (h *Handler) CreateUser(c *gin.Context) {
 
 	var createdUser UserDTO
 	var user CreateUserSchema
@@ -69,7 +69,7 @@ func (h *handler) CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, response.NewSuccessResponse(createdUser))
 }
 
-func (h *handler) LoginUser(c *gin.Context) {
+func (h *Handler) LoginUser(c *gin.Context) {
 
 	var accessTokenResponse AccessTokenResponse
 	var tokenResponse TokenResponse 
@@ -101,7 +101,7 @@ func (h *handler) LoginUser(c *gin.Context) {
 	c.JSON(http.StatusOK, response.NewSuccessResponse(accessTokenResponse))
 }
 
-func (h *handler) LogoutUser(c *gin.Context) {
+func (h *Handler) LogoutUser(c *gin.Context) {
 	userId,exist := c.Get("user_id")
 	if !exist {
 		c.JSON(http.StatusUnauthorized, response.NewErrorResponse("UNAUTHORIZED", "Unauthorized"))
@@ -146,7 +146,7 @@ func (h *handler) LogoutUser(c *gin.Context) {
 	c.JSON(http.StatusOK, response.NewSuccessResponse("Logout successfully"))
 }
 
-func (h *handler) RefreshToken(c *gin.Context) {
+func (h *Handler) RefreshToken(c *gin.Context) {
 	userId,exist := c.Get("user_id")
 	if !exist {
 		c.JSON(http.StatusUnauthorized, response.NewErrorResponse("UNAUTHORIZED", "Unauthorized"))

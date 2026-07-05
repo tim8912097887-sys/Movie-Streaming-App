@@ -13,7 +13,7 @@ func BindAndValidate[T any](r *http.Request) (T, error) {
 	var input T
 
 	// Check if the request body is missing entirely
-	if r.Body == nil || r.Header.Get("Content-Length") == "" {
+	if r.Body == nil || r.ContentLength == 0 {
         return input, errors.New("request body is empty")
     }
 
