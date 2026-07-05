@@ -12,7 +12,9 @@ import (
 
 type UserService interface {
     createUser(ctx context.Context, user CreateUserSchema) (UserDTO, error)
-    loginUser(ctx context.Context, user LoginUserSchema) (LoginServiceResponse, error)
+    loginUser(ctx context.Context, user LoginUserSchema) (TokenResponse, error)
+	logoutUser(ctx context.Context, userId string,tokenVersion int) error
+	refreshToken(ctx context.Context, userId string,tokenVersion int) (TokenResponse, error)
 	getAllUsers(ctx context.Context) ([]UserDTO, error)
 }
 
@@ -33,10 +35,12 @@ func NewUserHandler(userHandlerConfig UserHandlerConfig) *handler {
 	}
 }
 
-func (h *handler) RegisterRoutes(r *gin.RouterGroup) {
+func (h *handler) RegisterRoutes(r *gin.RouterGroup,refreshTokenMiddleware gin.HandlerFunc) {
 	r.POST("/register",h.CreateUser)
 	r.GET("/",h.GetUsers)
 	r.POST("/login",h.LoginUser)
+	r.POST("/logout",refreshTokenMiddleware,h.LogoutUser)
+	r.POST("/refresh",refreshTokenMiddleware,h.RefreshToken)
 }
 
 func (h *handler) CreateUser(c *gin.Context) {
@@ -69,8 +73,8 @@ func (h *handler) CreateUser(c *gin.Context) {
 
 func (h *handler) LoginUser(c *gin.Context) {
 
-	var loginResponse LoginHandlerResponse
-	var loginServiceResponse LoginServiceResponse
+	var accessTokenResponse AccessTokenResponse
+	var tokenResponse TokenResponse 
 	var user LoginUserSchema
 	var err error
 	user, err = validation.BindAndValidate[LoginUserSchema](c.Request)
@@ -80,7 +84,7 @@ func (h *handler) LoginUser(c *gin.Context) {
 		return
 	}
 
-	loginServiceResponse, err = h.userService.loginUser(c.Request.Context(), user)
+	tokenResponse, err = h.userService.loginUser(c.Request.Context(), user)
 
 	if err != nil {
 		h.logger.Error("Failed to login user", slog.Any("error", err))
@@ -93,10 +97,107 @@ func (h *handler) LoginUser(c *gin.Context) {
 		return
 	}
 
-	loginResponse.AccessToken = loginServiceResponse.AccessToken
+	accessTokenResponse.AccessToken = tokenResponse.AccessToken
     // Set httpOnly cookie for refresh token
-	c.SetCookie("refresh_token",loginServiceResponse.RefreshToken,7*24*60*60,"/api/v1/users","",false,true)
-	c.JSON(http.StatusOK, response.NewSuccessResponse(loginResponse))
+	setCookie(c,tokenResponse.RefreshToken,7*24*60*60)
+	c.JSON(http.StatusOK, response.NewSuccessResponse(accessTokenResponse))
+}
+
+func (h *handler) LogoutUser(c *gin.Context) {
+	userId,exist := c.Get("user_id")
+	if !exist {
+		c.JSON(http.StatusUnauthorized, response.NewErrorResponse("UNAUTHORIZED", "Unauthorized"))
+		return
+	}
+	userIdStr, ok := userId.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", "Internal Type Assertion Error"))
+		return
+	}
+	tokenVersion,exist := c.Get("token_version")
+	if !exist {
+		c.JSON(http.StatusUnauthorized, response.NewErrorResponse("UNAUTHORIZED", "Unauthorized"))
+		return
+	}
+	tokenVersionInt, ok := tokenVersion.(int)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", "Internal Type Assertion Error"))
+		return
+	}
+
+	err := h.userService.logoutUser(c.Request.Context(), userIdStr,tokenVersionInt)
+	if err != nil {
+		h.logger.Error("Failed to logout user", slog.Any("error", err))
+		// Handle business errors
+		if err == ErrUserNotFound {
+			// Clear cookie
+		    setCookie(c,"",-1)
+			c.JSON(http.StatusBadRequest, response.NewErrorResponse("USER_NOT_FOUND", err.Error()))
+			return
+		}
+		if err == ErrTokenVersionMismatch {
+			// Clear cookie
+		    setCookie(c,"",-1)
+			c.JSON(http.StatusBadRequest, response.NewErrorResponse("TOKEN_VERSION_MISMATCH", err.Error()))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", err.Error()))
+		return
+	}
+	setCookie(c,"",-1)
+	c.JSON(http.StatusOK, response.NewSuccessResponse("Logout successfully"))
+}
+
+func (h *handler) RefreshToken(c *gin.Context) {
+	userId,exist := c.Get("user_id")
+	if !exist {
+		c.JSON(http.StatusUnauthorized, response.NewErrorResponse("UNAUTHORIZED", "Unauthorized"))
+		return
+	}
+	userIdStr, ok := userId.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", "Internal Type Assertion Error"))
+		return
+	}
+	tokenVersion,exist := c.Get("token_version")
+	if !exist {
+		c.JSON(http.StatusUnauthorized, response.NewErrorResponse("UNAUTHORIZED", "Unauthorized"))
+		return
+	}
+	tokenVersionInt, ok := tokenVersion.(int)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", "Internal Type Assertion Error"))
+		return
+	}
+
+	var tokenResponse TokenResponse
+	var accessTokenResponse AccessTokenResponse
+
+	tokenResponse,err := h.userService.refreshToken(c.Request.Context(), userIdStr,tokenVersionInt)
+	if err != nil {
+		h.logger.Error("Failed to logout user", slog.Any("error", err))
+		
+		// Handle business errors
+		if err == ErrUserNotFound {
+			// Clear cookie
+		    setCookie(c,"",-1)
+			c.JSON(http.StatusBadRequest, response.NewErrorResponse("USER_NOT_FOUND", err.Error()))
+			return
+		}
+		if err == ErrTokenVersionMismatch {
+			// Clear cookie
+		    setCookie(c,"",-1)
+			c.JSON(http.StatusBadRequest, response.NewErrorResponse("TOKEN_VERSION_MISMATCH", err.Error()))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", err.Error()))
+		return
+	}
+
+	accessTokenResponse.AccessToken = tokenResponse.AccessToken
+	// Set httpOnly cookie for refresh token
+	setCookie(c,tokenResponse.RefreshToken,7*24*60*60)
+	c.JSON(http.StatusOK, response.NewSuccessResponse(accessTokenResponse))
 }
 
 // For debug
@@ -110,4 +211,8 @@ func (h *handler) GetUsers(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response.NewSuccessResponse(users))
+}
+
+func setCookie(c *gin.Context, value string,expiredTime int) {
+	c.SetCookie("refresh_token", value, expiredTime, "/api/v1/users", "", false, true)
 }

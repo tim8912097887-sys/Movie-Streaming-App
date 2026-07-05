@@ -19,6 +19,7 @@ type User struct {
 	Name            string     `json:"name"`
 	Email           string     `json:"email"`
 	Password        string     `json:"password"`
+	TokenVersion    int        `json:"token_version"`
 	Favorite_Genres []movies.Genres `json:"favorite_genres"`
 }
 
@@ -27,11 +28,11 @@ type UserDTO struct {
 	Email           string     `json:"email"`
 }
 
-type LoginServiceResponse struct {
+type TokenResponse struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 }
 
-type LoginHandlerResponse struct {
+type AccessTokenResponse struct {
 	AccessToken  string `json:"access_token"`
 }

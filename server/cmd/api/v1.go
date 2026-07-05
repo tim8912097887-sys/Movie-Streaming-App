@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/tim8912097887-sys/server/internal/auth"
 	"github.com/tim8912097887-sys/server/internal/configs"
+	"github.com/tim8912097887-sys/server/internal/shared/middlewares"
 	"github.com/tim8912097887-sys/server/internal/shared/response"
 	"github.com/tim8912097887-sys/server/internal/users"
 )
@@ -38,11 +39,12 @@ func (a *Api) Mount() http.Handler {
 	userRouter := v1Router.Group("/users")
 	passwordService := auth.NewPasswordService()
 	jwtService := auth.NewJWTService()
+	refreshTokenMiddleware := middlewares.RefreshTokenMiddleware(jwtService, a.Config.EnvConfigs.RefreshTokenSecret)
 	userServiceConfig := users.UserServiceConfig{PasswordService: passwordService, JWTService: jwtService, EnvConfigs: a.Config.EnvConfigs}
 	userService := users.NewUserService(userServiceConfig)
 	userHandlerConfig := users.UserHandlerConfig{UserService: userService, Logger: a.Config.Logger}
 	userHandler := users.NewUserHandler(userHandlerConfig)
-	userHandler.RegisterRoutes(userRouter)
+	userHandler.RegisterRoutes(userRouter, refreshTokenMiddleware)
 	
 	return router
 }

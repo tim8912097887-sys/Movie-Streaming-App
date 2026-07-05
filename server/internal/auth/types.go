@@ -7,13 +7,18 @@ import (
 )
 
 type CustomClaims struct {
-	Email  string `json:"email"`
+	TokenVersion int           `json:"token_version"`
 	jwt.StandardClaims
 }
 
 type JWTGeneratePayload struct {
 	Subject      string        `json:"subject"`
 	Secret   string        `json:"secret"`
-	Email  string        `json:"email"`
 	Duration time.Duration `json:"duration"`
+	TokenVersion int           `json:"token_version"`
+}
+
+type JWTValidatePayload struct {
+	Token string `json:"token"`
+	Secret string `json:"secret"`
 }

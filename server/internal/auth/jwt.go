@@ -15,7 +15,7 @@ func NewJWTService() *jWTService {
 
 func (j *jWTService) GenerateToken(payload JWTGeneratePayload) (string, error) {
 	claims := &CustomClaims{
-		Email: payload.Email,
+		TokenVersion: payload.TokenVersion,
 		StandardClaims: jwt.StandardClaims{
 			Subject: payload.Subject,
 			ExpiresAt: time.Now().Add(payload.Duration).Unix(),
@@ -33,6 +33,20 @@ func (j *jWTService) GenerateToken(payload JWTGeneratePayload) (string, error) {
 	return tokenString,nil
 }
 
-func (j *jWTService) ValidateToken(token string) bool {
-	return false
+func (j *jWTService) ValidateToken(payload JWTValidatePayload) (CustomClaims, error) {
+	claims := &CustomClaims{}
+
+	token, err := jwt.ParseWithClaims(payload.Token, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(payload.Secret), nil
+	})
+
+	if err != nil {
+		return CustomClaims{}, err
+	}
+
+	if !token.Valid {
+		return CustomClaims{}, err
+	}
+
+	return *claims, nil
 }

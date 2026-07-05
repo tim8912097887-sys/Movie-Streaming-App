@@ -14,6 +14,7 @@ type PasswordService interface {
 
 type JWTService interface {
 	GenerateToken(payload auth.JWTGeneratePayload) (string, error)
+    ValidateToken(payload auth.JWTValidatePayload) (auth.CustomClaims, error)
 }
 
 type UserServiceConfig struct {
@@ -50,7 +51,7 @@ func (s *service) createUser(ctx context.Context, userPayload CreateUserSchema) 
 		return UserDTO{}, err
 	 }
 	 user := User{
-		ID:        "sodfjsdjfjw",
+		ID:        userPayload.Name+userPayload.Email,
 		Name:      userPayload.Name,
 		Email:     userPayload.Email,
 		Password:  hashedPassword,
@@ -60,7 +61,7 @@ func (s *service) createUser(ctx context.Context, userPayload CreateUserSchema) 
 	 return s.DataToDTO(user), nil
 }
 
-func (s *service) loginUser(ctx context.Context, userPayload LoginUserSchema) (LoginServiceResponse, error) {
+func (s *service) loginUser(ctx context.Context, userPayload LoginUserSchema) (TokenResponse, error) {
 	
     var existingUser User
 
@@ -71,41 +72,91 @@ func (s *service) loginUser(ctx context.Context, userPayload LoginUserSchema) (L
 	}
 
 	if existingUser.ID == "" {
-		return LoginServiceResponse{}, ErrInvalidCredentials
+		return TokenResponse{}, ErrInvalidCredentials
 	}
 
 	if !s.passwordService.CheckPasswordHash(userPayload.Password, existingUser.Password) {
-		return LoginServiceResponse{}, ErrInvalidCredentials
+		return TokenResponse{}, ErrInvalidCredentials
 	}
 
 	refreshTokenPayload := auth.JWTGeneratePayload{
 		Subject: existingUser.ID,
-		Email:  existingUser.Email,
+		TokenVersion: existingUser.TokenVersion,
 		Duration: RefreshTokenExpiredTime,
 		Secret: s.envConfigs.RefreshTokenSecret,
 	}
 
 	accessTokenPayload := auth.JWTGeneratePayload{
 		Subject: existingUser.ID,
-		Email:  existingUser.Email,
+		TokenVersion: existingUser.TokenVersion,
 		Duration: AccessTokenExpiredTime,
 		Secret: s.envConfigs.AccessTokenSecret,
 	}
 
 	refreshToken, err := s.jwtService.GenerateToken(refreshTokenPayload)
 	if err != nil {
-		return LoginServiceResponse{}, err
+		return TokenResponse{}, err
 	}
 
 	accessToken, err := s.jwtService.GenerateToken(accessTokenPayload)
 	if err != nil {
-		return LoginServiceResponse{}, err
+		return TokenResponse{}, err
 	}
 
-	return LoginServiceResponse{
+	return TokenResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil
+}
+
+func (s *service) refreshToken(ctx context.Context, userId string,tokenVersion int) (TokenResponse, error) {
+	for i, user := range inmemoryUser {
+		if user.ID == userId {
+			if user.TokenVersion != tokenVersion {
+				return TokenResponse{}, ErrTokenVersionMismatch
+			}
+			inmemoryUser[i].TokenVersion = user.TokenVersion + 1
+			refreshTokenPayload := auth.JWTGeneratePayload{
+				Subject: inmemoryUser[i].ID,
+				TokenVersion: inmemoryUser[i].TokenVersion,
+				Duration: RefreshTokenExpiredTime,
+				Secret: s.envConfigs.RefreshTokenSecret,
+			}
+
+			accessTokenPayload := auth.JWTGeneratePayload{
+				Subject: inmemoryUser[i].ID,
+				TokenVersion: inmemoryUser[i].TokenVersion,
+				Duration: AccessTokenExpiredTime,
+				Secret: s.envConfigs.AccessTokenSecret,
+			}
+
+			refreshToken, err := s.jwtService.GenerateToken(refreshTokenPayload)
+			if err != nil {
+				return TokenResponse{}, err
+			}
+
+			accessToken, err := s.jwtService.GenerateToken(accessTokenPayload)
+			if err != nil {
+				return TokenResponse{}, err
+			}
+			return TokenResponse{AccessToken: accessToken, RefreshToken: refreshToken}, nil
+		}
+	}
+	return TokenResponse{}, ErrUserNotFound
+}
+
+func (s *service) logoutUser(ctx context.Context, userId string,tokenVersion int) error {
+	
+	for i, user := range inmemoryUser {
+		if user.ID == userId {
+			if user.TokenVersion != tokenVersion {
+				return ErrTokenVersionMismatch
+			}
+			inmemoryUser[i].TokenVersion = user.TokenVersion + 1
+			return nil
+		}
+	}
+	return ErrUserNotFound
 }
 
 // For debug
