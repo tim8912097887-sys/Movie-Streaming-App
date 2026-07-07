@@ -5,11 +5,20 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
 
+func ValidateQueryParams[T any](c *gin.Context) (T, error) {
+	var queryParams T
 
-func BindAndValidate[T any](r *http.Request) (T, error) {
+	if err := c.ShouldBindQuery(&queryParams); err != nil {
+		return queryParams, err
+	}
+	return queryParams, nil
+}
+
+func ValidateRequestBody[T any](r *http.Request) (T, error) {
 	var input T
 
 	// Check if the request body is missing entirely

@@ -10,9 +10,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/tim8912097887-sys/server/internal/auth"
 	"github.com/tim8912097887-sys/server/internal/configs"
+	"github.com/tim8912097887-sys/server/internal/movies"
 	"github.com/tim8912097887-sys/server/internal/shared/middlewares"
 	"github.com/tim8912097887-sys/server/internal/shared/response"
 	"github.com/tim8912097887-sys/server/internal/users"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
@@ -49,6 +51,16 @@ func (a *Api) Mount(dbClient *mongo.Client) http.Handler {
 	userHandler := users.NewUserHandler(userHandlerConfig)
 	userHandler.RegisterRoutes(userRouter, refreshTokenMiddleware)
 	
+	// Register movie routes
+	accessTokenMiddleware := middlewares.AccessTokenMiddleware(jwtService, a.Config.EnvConfigs.AccessTokenSecret)
+	movieRouter := v1Router.Group("/movies")
+	movieCollection := dbClient.Database(a.Config.EnvConfigs.DbName).Collection("movies")
+	movieCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{Keys: bson.D{{Key: "created_at", Value: -1}}})
+	movieRepository := movies.NewMovieRepository(movieCollection)
+	movieService := movies.NewMovieService(movieRepository, userRepository)
+	movieHandlerConfig := movies.MovieHandlerConfig{MovieService: movieService, Logger: a.Config.Logger}
+	movieHandler := movies.NewMovieHandler(movieHandlerConfig)
+	movieHandler.RegisterRoutes(movieRouter, accessTokenMiddleware)
 	return router
 }
 

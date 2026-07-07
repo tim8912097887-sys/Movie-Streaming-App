@@ -15,18 +15,19 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/tim8912097887-sys/server/internal/auth"
 	"github.com/tim8912097887-sys/server/internal/configs"
-	"github.com/tim8912097887-sys/server/internal/movies"
+	"github.com/tim8912097887-sys/server/internal/shared"
 	"github.com/tim8912097887-sys/server/internal/shared/response"
+	"github.com/tim8912097887-sys/server/internal/shared/types"
 	"github.com/tim8912097887-sys/server/internal/users"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-func getCreateUserSchema(modifiers ...func(*users.CreateUserSchema)) users.CreateUserSchema {
-	baseSchema := users.CreateUserSchema{
+func getCreateUserSchema(modifiers ...func(*types.CreateUserSchema)) types.CreateUserSchema {
+	baseSchema := types.CreateUserSchema{
 		Name:     "John Doe",
 		Email:    "k6Vz4@example.com",
 		Password: "password123",
-		FavoriteGenres:   []movies.Genres{
+		FavoriteGenres:   []types.Genres{
 			{
 				GenreID: 1,
 				Name:    "Action",
@@ -82,7 +83,7 @@ func decodeResponse[T any](t *testing.T,resp *http.Response) T {
 	return payload
 }
 
-func createUserRequest(t *testing.T, r *gin.Engine,payload users.CreateUserSchema) *http.Response {
+func createUserRequest(t *testing.T, r *gin.Engine,payload types.CreateUserSchema) *http.Response {
 	t.Helper()
 	// Serialize payload
     body,err := json.Marshal(payload)
@@ -145,13 +146,13 @@ func TestRegisterUserValidation(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		modifier     func(*users.CreateUserSchema)
+		modifier     func(*types.CreateUserSchema)
 		expectedField string
 		expectedTag  string
 	}{
 		{
 			name: "name is required",
-			modifier: func(s *users.CreateUserSchema) {
+			modifier: func(s *types.CreateUserSchema) {
 				s.Name = ""
 			},
 			expectedField: "Name",
@@ -159,7 +160,7 @@ func TestRegisterUserValidation(t *testing.T) {
 		},
 		{
 			name: "name must be at least 3 characters",
-			modifier: func(s *users.CreateUserSchema) {
+			modifier: func(s *types.CreateUserSchema) {
 				s.Name = "Jo"
 			},
 			expectedField: "Name",
@@ -167,7 +168,7 @@ func TestRegisterUserValidation(t *testing.T) {
 		},
 		{
 			name: "name must not exceed 50 characters",
-			modifier: func(s *users.CreateUserSchema) {
+			modifier: func(s *types.CreateUserSchema) {
 				s.Name = strings.Repeat("a", 51)
 			},
 			expectedField: "Name",
@@ -175,7 +176,7 @@ func TestRegisterUserValidation(t *testing.T) {
 		},
 		{
 			name: "email is required",
-			modifier: func(s *users.CreateUserSchema) {
+			modifier: func(s *types.CreateUserSchema) {
 				s.Email = ""
 			},
 			expectedField: "Email",
@@ -183,7 +184,7 @@ func TestRegisterUserValidation(t *testing.T) {
 		},
 		{
 			name: "email must be a valid email format",
-			modifier: func(s *users.CreateUserSchema) {
+			modifier: func(s *types.CreateUserSchema) {
 				s.Email = "invalid-email"
 			},
 			expectedField: "Email",
@@ -191,7 +192,7 @@ func TestRegisterUserValidation(t *testing.T) {
 		},
 		{
 			name: "email must not exceed 60 characters",
-			modifier: func(s *users.CreateUserSchema) {
+			modifier: func(s *types.CreateUserSchema) {
 				s.Email = strings.Repeat("a", 50) + "@example.com"
 			},
 			expectedField: "Email",
@@ -199,7 +200,7 @@ func TestRegisterUserValidation(t *testing.T) {
 		},
 		{
 			name: "password is required",
-			modifier: func(s *users.CreateUserSchema) {
+			modifier: func(s *types.CreateUserSchema) {
 				s.Password = ""
 			},
 			expectedField: "Password",
@@ -207,7 +208,7 @@ func TestRegisterUserValidation(t *testing.T) {
 		},
 		{
 			name: "password must be at least 8 characters",
-			modifier: func(s *users.CreateUserSchema) {
+			modifier: func(s *types.CreateUserSchema) {
 				s.Password = "short"
 			},
 			expectedField: "Password",
@@ -215,7 +216,7 @@ func TestRegisterUserValidation(t *testing.T) {
 		},
 		{
 			name: "favorite genres are required",
-			modifier: func(s *users.CreateUserSchema) {
+			modifier: func(s *types.CreateUserSchema) {
 				s.FavoriteGenres = nil
 			},
 			expectedField: "FavoriteGenres",
@@ -223,8 +224,8 @@ func TestRegisterUserValidation(t *testing.T) {
 		},
 		{
 			name: "favorite genres items must satisfy nested validation",
-			modifier: func(s *users.CreateUserSchema) {
-				s.FavoriteGenres = []movies.Genres{{}}
+			modifier: func(s *types.CreateUserSchema) {
+				s.FavoriteGenres = []types.Genres{{}}
 			},
 			expectedField: "FavoriteGenres",
 			expectedTag:   "required",
@@ -301,11 +302,11 @@ func TestLoginUserValidation(t *testing.T) {
 func TestRegisterUserBusinessLogic(t *testing.T) {
 	t.Run("returns created user on success", func(t *testing.T) {
 		repository := InitMockUserRepository()
-		repository.FindUserByEmailFunc = func(ctx context.Context, email string) (users.User, error) {
-			return users.User{}, users.ErrUserNotFound
+		repository.FindUserByEmailFunc = func(ctx context.Context, email string) (types.User, error) {
+			return types.User{}, shared.ErrUserNotFound
 		}
-		repository.CreateUserFunc = func(ctx context.Context, user users.CreateUserSchema) (users.User, error) {
-			return users.User{ID: bson.NewObjectID(), Name: user.Name, Email: user.Email}, nil
+		repository.CreateUserFunc = func(ctx context.Context, user types.CreateUserSchema) (types.User, error) {
+			return types.User{ID: bson.NewObjectID(), Name: user.Name, Email: user.Email}, nil
 		}
 
 		passwordService := InitMockPasswordService()
@@ -339,8 +340,8 @@ func TestRegisterUserBusinessLogic(t *testing.T) {
 
 	t.Run("returns bad request when user already exists", func(t *testing.T) {
 		repository := InitMockUserRepository()
-		repository.FindUserByEmailFunc = func(ctx context.Context, email string) (users.User, error) {
-			return users.User{Email: email}, nil
+		repository.FindUserByEmailFunc = func(ctx context.Context, email string) (types.User, error) {
+			return types.User{Email: email}, nil
 		}
 
 		handler := wireupHandler(t, repository, InitMockPasswordService(), InitMockJWTService())
@@ -351,8 +352,8 @@ func TestRegisterUserBusinessLogic(t *testing.T) {
 
 	t.Run("returns internal server error when password hashing fails", func(t *testing.T) {
 		repository := InitMockUserRepository()
-		repository.FindUserByEmailFunc = func(ctx context.Context, email string) (users.User, error) {
-			return users.User{}, users.ErrUserNotFound
+		repository.FindUserByEmailFunc = func(ctx context.Context, email string) (types.User, error) {
+			return types.User{}, shared.ErrUserNotFound
 		}
 
 		passwordService := InitMockPasswordService()
@@ -368,11 +369,11 @@ func TestRegisterUserBusinessLogic(t *testing.T) {
 
 	t.Run("returns internal server error when repository create fails", func(t *testing.T) {
 		repository := InitMockUserRepository()
-		repository.FindUserByEmailFunc = func(ctx context.Context, email string) (users.User, error) {
-			return users.User{}, users.ErrUserNotFound
+		repository.FindUserByEmailFunc = func(ctx context.Context, email string) (types.User, error) {
+			return types.User{}, shared.ErrUserNotFound
 		}
-		repository.CreateUserFunc = func(ctx context.Context, user users.CreateUserSchema) (users.User, error) {
-			return users.User{}, errors.New("create failed")
+		repository.CreateUserFunc = func(ctx context.Context, user types.CreateUserSchema) (types.User, error) {
+			return types.User{}, errors.New("create failed")
 		}
 
 		handler := wireupHandler(t, repository, InitMockPasswordService(), InitMockJWTService())
@@ -383,8 +384,8 @@ func TestRegisterUserBusinessLogic(t *testing.T) {
 
 	t.Run("returns internal server error when repository lookup fails unexpectedly", func(t *testing.T) {
 		repository := InitMockUserRepository()
-		repository.FindUserByEmailFunc = func(ctx context.Context, email string) (users.User, error) {
-			return users.User{}, errors.New("lookup failed")
+		repository.FindUserByEmailFunc = func(ctx context.Context, email string) (types.User, error) {
+			return types.User{}, errors.New("lookup failed")
 		}
 
 		handler := wireupHandler(t, repository, InitMockPasswordService(), InitMockJWTService())
@@ -397,8 +398,8 @@ func TestRegisterUserBusinessLogic(t *testing.T) {
 func TestLoginUserBusinessLogic(t *testing.T) {
 	t.Run("returns tokens on success", func(t *testing.T) {
 		repository := InitMockUserRepository()
-		repository.FindUserByEmailFunc = func(ctx context.Context, email string) (users.User, error) {
-			return users.User{ID: bson.NewObjectID(), TokenVersion: 2, Password: "stored-hash"}, nil
+		repository.FindUserByEmailFunc = func(ctx context.Context, email string) (types.User, error) {
+			return types.User{ID: bson.NewObjectID(), TokenVersion: 2, Password: "stored-hash"}, nil
 		}
 
 		passwordService := InitMockPasswordService()
@@ -438,8 +439,8 @@ func TestLoginUserBusinessLogic(t *testing.T) {
 
 	t.Run("returns bad request for invalid credentials when user is not found", func(t *testing.T) {
 		repository := InitMockUserRepository()
-		repository.FindUserByEmailFunc = func(ctx context.Context, email string) (users.User, error) {
-			return users.User{}, users.ErrUserNotFound
+		repository.FindUserByEmailFunc = func(ctx context.Context, email string) (types.User, error) {
+			return types.User{}, shared.ErrUserNotFound
 		}
 
 		handler := wireupHandler(t, repository, InitMockPasswordService(), InitMockJWTService())
@@ -450,8 +451,8 @@ func TestLoginUserBusinessLogic(t *testing.T) {
 
 	t.Run("returns bad request for invalid credentials when password does not match", func(t *testing.T) {
 		repository := InitMockUserRepository()
-		repository.FindUserByEmailFunc = func(ctx context.Context, email string) (users.User, error) {
-			return users.User{ID: bson.NewObjectID(), Password: "stored-hash"}, nil
+		repository.FindUserByEmailFunc = func(ctx context.Context, email string) (types.User, error) {
+			return types.User{ID: bson.NewObjectID(), Password: "stored-hash"}, nil
 		}
 
 		passwordService := InitMockPasswordService()
@@ -467,8 +468,8 @@ func TestLoginUserBusinessLogic(t *testing.T) {
 
 	t.Run("returns internal server error when repository lookup fails unexpectedly", func(t *testing.T) {
 		repository := InitMockUserRepository()
-		repository.FindUserByEmailFunc = func(ctx context.Context, email string) (users.User, error) {
-			return users.User{}, errors.New("lookup failed")
+		repository.FindUserByEmailFunc = func(ctx context.Context, email string) (types.User, error) {
+			return types.User{}, errors.New("lookup failed")
 		}
 
 		handler := wireupHandler(t, repository, InitMockPasswordService(), InitMockJWTService())
@@ -479,8 +480,8 @@ func TestLoginUserBusinessLogic(t *testing.T) {
 
 	t.Run("returns internal server error when jwt generation fails", func(t *testing.T) {
 		repository := InitMockUserRepository()
-		repository.FindUserByEmailFunc = func(ctx context.Context, email string) (users.User, error) {
-			return users.User{ID: bson.NewObjectID(), TokenVersion: 1, Password: "stored-hash"}, nil
+		repository.FindUserByEmailFunc = func(ctx context.Context, email string) (types.User, error) {
+			return types.User{ID: bson.NewObjectID(), TokenVersion: 1, Password: "stored-hash"}, nil
 		}
 
 		passwordService := InitMockPasswordService()
@@ -563,42 +564,42 @@ func (m *MockPasswordService) CheckPasswordHash(password, hash string) bool {
 }
 
 type MockUserRepository struct {
-	CreateUserFunc     func(ctx context.Context, user users.CreateUserSchema) (users.User, error)
-	FindUserByEmailFunc func(ctx context.Context, email string) (users.User, error)
-	FindUserByIdFunc   func(ctx context.Context, id string) (users.User, error)
-	UpdateUserFunc     func(ctx context.Context, user users.UpdateUserSchema) error
+	CreateUserFunc     func(ctx context.Context, user types.CreateUserSchema) (types.User, error)
+	FindUserByEmailFunc func(ctx context.Context, email string) (types.User, error)
+	FindUserByIdFunc   func(ctx context.Context, id string) (types.User, error)
+	UpdateUserFunc     func(ctx context.Context, user types.UpdateUserSchema) error
 }
 
 func InitMockUserRepository() *MockUserRepository {
 	return &MockUserRepository{
-		CreateUserFunc: func(ctx context.Context, user users.CreateUserSchema) (users.User, error) {
-			return users.User{}, nil
+		CreateUserFunc: func(ctx context.Context, user types.CreateUserSchema) (types.User, error) {
+			return types.User{}, nil
 		},
-		FindUserByEmailFunc: func(ctx context.Context, email string) (users.User, error) {
-			return users.User{}, users.ErrUserNotFound
+		FindUserByEmailFunc: func(ctx context.Context, email string) (types.User, error) {
+			return types.User{}, shared.ErrUserNotFound
 		},
-		FindUserByIdFunc: func(ctx context.Context, id string) (users.User, error) {
-			return users.User{}, users.ErrUserNotFound
+		FindUserByIdFunc: func(ctx context.Context, id string) (types.User, error) {
+			return types.User{}, shared.ErrUserNotFound
 		},
-		UpdateUserFunc: func(ctx context.Context, user users.UpdateUserSchema) error {
+		UpdateUserFunc: func(ctx context.Context, user types.UpdateUserSchema) error {
 			return nil
 		},
 	}
 }
 
-func (m *MockUserRepository) CreateUser(ctx context.Context, user users.CreateUserSchema) (users.User, error) {
+func (m *MockUserRepository) CreateUser(ctx context.Context, user types.CreateUserSchema) (types.User, error) {
 	return m.CreateUserFunc(ctx, user)
 }
 
-func (m *MockUserRepository) FindUserByEmail(ctx context.Context, email string) (users.User, error) {
+func (m *MockUserRepository) FindUserByEmail(ctx context.Context, email string) (types.User, error) {
 	return m.FindUserByEmailFunc(ctx, email)
 }
 
-func (m *MockUserRepository) FindUserById(ctx context.Context, id string) (users.User, error) {
+func (m *MockUserRepository) FindUserById(ctx context.Context, id string) (types.User, error) {
 	return m.FindUserByIdFunc(ctx, id)
 }
 
-func (m *MockUserRepository) UpdateUser(ctx context.Context, user users.UpdateUserSchema) error {
+func (m *MockUserRepository) UpdateUser(ctx context.Context, user types.UpdateUserSchema) error {
 	return m.UpdateUserFunc(ctx, user)
 }
 

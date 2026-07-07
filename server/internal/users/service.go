@@ -5,6 +5,8 @@ import (
 
 	"github.com/tim8912097887-sys/server/internal/auth"
 	"github.com/tim8912097887-sys/server/internal/configs"
+	"github.com/tim8912097887-sys/server/internal/shared"
+	"github.com/tim8912097887-sys/server/internal/shared/types"
 )
 
 type PasswordService interface {
@@ -18,10 +20,10 @@ type JWTService interface {
 }
 
 type UserRepository interface {
-	CreateUser(ctx context.Context, user CreateUserSchema) (User, error)
-	FindUserByEmail(ctx context.Context, email string) (User, error)
-	FindUserById(ctx context.Context, id string) (User, error)
-	UpdateUser(ctx context.Context, user UpdateUserSchema) error
+	CreateUser(ctx context.Context, user types.CreateUserSchema) (types.User, error)
+	FindUserByEmail(ctx context.Context, email string) (types.User, error)
+	FindUserById(ctx context.Context, id string) (types.User, error)
+	UpdateUser(ctx context.Context, user types.UpdateUserSchema) error
 }
 
 type UserServiceConfig struct {
@@ -47,15 +49,15 @@ func NewUserService(userServiceConfig UserServiceConfig) *service {
 	}
 }
 
-func (s *service) createUser(ctx context.Context, userPayload CreateUserSchema) (UserDTO, error) {
+func (s *service) createUser(ctx context.Context, userPayload types.CreateUserSchema) (UserDTO, error) {
 
 	existUser, err := s.repository.FindUserByEmail(ctx, userPayload.Email)
-	if err != nil && err != ErrUserNotFound {
+	if err != nil && err != shared.ErrUserNotFound {
 		return UserDTO{}, err
 	}
 
 	if existUser.Email == userPayload.Email {
-		return UserDTO{}, ErrUserAlreadyExists
+		return UserDTO{}, shared.ErrUserAlreadyExists
 	}
 
 	 hashedPassword, err := s.passwordService.HashPassword(userPayload.Password)
@@ -65,7 +67,7 @@ func (s *service) createUser(ctx context.Context, userPayload CreateUserSchema) 
 
 	 userPayload.Password = hashedPassword
 
-	 var createdUser User
+	 var createdUser types.User
 
 	 createdUser, err = s.repository.CreateUser(ctx, userPayload)
 	 if err != nil {
@@ -76,19 +78,19 @@ func (s *service) createUser(ctx context.Context, userPayload CreateUserSchema) 
 
 func (s *service) loginUser(ctx context.Context, userPayload LoginUserSchema) (TokenResponse, error) {
 	
-    var existingUser User
+    var existingUser types.User
 
 	// check if user exists
 	existingUser, err := s.repository.FindUserByEmail(ctx, userPayload.Email)
 	if err != nil {
-		if err == ErrUserNotFound {
-			return TokenResponse{}, ErrInvalidCredentials
+		if err == shared.ErrUserNotFound {
+			return TokenResponse{}, shared.ErrInvalidCredentials
 		}
 		return TokenResponse{}, err
 	}
 
 	if !s.passwordService.CheckPasswordHash(userPayload.Password, existingUser.Password) {
-		return TokenResponse{}, ErrInvalidCredentials
+		return TokenResponse{}, shared.ErrInvalidCredentials
 	}
 
 	// generate tokens
@@ -127,19 +129,19 @@ func (s *service) refreshToken(ctx context.Context, userId string,tokenVersion i
 	// check if user exists and token version matches
 	existingUser, err := s.repository.FindUserById(ctx, userId)
 	if err != nil {
-		if err == ErrUserNotFound {
-			return TokenResponse{}, ErrUserNotFound
+		if err == shared.ErrUserNotFound {
+			return TokenResponse{}, shared.ErrUserNotFound
 		}
 		return TokenResponse{}, err
 	}
 
 	if existingUser.TokenVersion != tokenVersion {
-		return TokenResponse{}, ErrTokenVersionMismatch
+		return TokenResponse{}, shared.ErrTokenVersionMismatch
 	}
 
 	// update token version
 	newTokenVersion := existingUser.TokenVersion + 1
-	updateUserSchema := UpdateUserSchema{
+	updateUserSchema := types.UpdateUserSchema{
 		Id:              existingUser.ID.Hex(),
 		TokenVersion:    newTokenVersion,
 	}
@@ -181,18 +183,18 @@ func (s *service) logoutUser(ctx context.Context, userId string,tokenVersion int
 	// check if user exists and token version matches
 	existingUser, err := s.repository.FindUserById(ctx, userId)
 	if err != nil {
-		if err == ErrUserNotFound {
-			return ErrUserNotFound
+		if err == shared.ErrUserNotFound {
+			return shared.ErrUserNotFound
 		}
 		return err
 	}
 
 	if existingUser.TokenVersion != tokenVersion {
-		return ErrTokenVersionMismatch
+		return shared.ErrTokenVersionMismatch
 	}
 
 	// update token version
-	updateUserSchema := UpdateUserSchema{
+	updateUserSchema := types.UpdateUserSchema{
 		Id:              existingUser.ID.Hex(),
 		TokenVersion:    existingUser.TokenVersion + 1,
 	}
@@ -201,7 +203,7 @@ func (s *service) logoutUser(ctx context.Context, userId string,tokenVersion int
 	return nil
 }
 
-func (s *service) DataToDTO(user User) UserDTO {
+func (s *service) DataToDTO(user types.User) UserDTO {
 	return UserDTO{
 		Name:      user.Name,
 		Email:     user.Email,

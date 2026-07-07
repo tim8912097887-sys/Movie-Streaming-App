@@ -1,0 +1,103 @@
+package movies
+
+import (
+	"context"
+	"log/slog"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/tim8912097887-sys/server/internal/shared"
+	"github.com/tim8912097887-sys/server/internal/shared/response"
+	"github.com/tim8912097887-sys/server/internal/shared/validation"
+)
+
+type MovieService interface {
+	GetMovies(ctx context.Context,paginationParams PaginationParams) ([]MovieDTO,error)
+    GetUserMovie(ctx context.Context,userId string,tokenVersion int) ([]MovieDTO,error)
+}
+
+type MovieHandlerConfig struct {
+	MovieService MovieService
+	Logger *slog.Logger
+}
+
+type Handler struct{
+	movieService MovieService
+	logger *slog.Logger
+}
+
+func NewMovieHandler(movieHandlerConfig MovieHandlerConfig) *Handler {
+	return &Handler{
+		movieService: movieHandlerConfig.MovieService,
+		logger: movieHandlerConfig.Logger,
+	}
+}
+
+func (h *Handler) RegisterRoutes(r *gin.RouterGroup,accessMiddleware gin.HandlerFunc) {
+	r.GET("",h.GetMovies)
+	r.GET("/user",accessMiddleware,h.GetUserMovie)
+}
+
+func (h *Handler) GetMovies(c *gin.Context) {
+     
+	paginationParams, err := validation.ValidateQueryParams[PaginationParams](c)
+
+	if err != nil {
+		h.logger.Error("Failed to bind and validate request", slog.Any("error", err))
+		c.JSON(http.StatusBadRequest,response.NewErrorResponse("VALIDATION_ERROR",err.Error()))
+		return
+	}
+
+	movies, err := h.movieService.GetMovies(c.Request.Context(), paginationParams)
+
+	if err != nil {
+		h.logger.Error("Failed to get movies", slog.Any("error", err))
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, response.NewSuccessResponse(movies))
+}
+
+func (h *Handler) GetUserMovie(c *gin.Context) {
+	userId,exist := c.Get("user_id")
+	if !exist {
+		c.JSON(http.StatusUnauthorized, response.NewErrorResponse("UNAUTHORIZED", "Unauthorized"))
+		return
+	}
+	userIdStr, ok := userId.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", "Internal Type Assertion Error"))
+		return
+	}
+
+	tokenVersion,exist := c.Get("token_version")
+	if !exist {
+		c.JSON(http.StatusUnauthorized, response.NewErrorResponse("UNAUTHORIZED", "Unauthorized"))
+		return
+	}
+	tokenVersionInt, ok := tokenVersion.(int)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", "Internal Type Assertion Error"))
+		return
+	}
+
+	movies, err := h.movieService.GetUserMovie(c.Request.Context(), userIdStr,tokenVersionInt)
+
+	// Handle business errors
+	if err == shared.ErrTokenVersionMismatch {
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("TOKEN_VERSION_MISMATCH", err.Error()))
+		return
+	}
+	if err == shared.ErrUserNotFound {
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("USER_NOT_FOUND", err.Error()))
+		return
+	}
+	if err != nil {
+		h.logger.Error("Failed to get movies", slog.Any("error", err))
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, response.NewSuccessResponse(movies))
+}
