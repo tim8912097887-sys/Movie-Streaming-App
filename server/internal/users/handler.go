@@ -6,12 +6,14 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/tim8912097887-sys/server/internal/shared"
 	"github.com/tim8912097887-sys/server/internal/shared/response"
+	"github.com/tim8912097887-sys/server/internal/shared/types"
 	"github.com/tim8912097887-sys/server/internal/shared/validation"
 )
 
 type UserService interface {
-    createUser(ctx context.Context, user CreateUserSchema) (UserDTO, error)
+    createUser(ctx context.Context, user types.CreateUserSchema) (UserDTO, error)
     loginUser(ctx context.Context, user LoginUserSchema) (TokenResponse, error)
 	logoutUser(ctx context.Context, userId string,tokenVersion int) error
 	refreshToken(ctx context.Context, userId string,tokenVersion int) (TokenResponse, error)
@@ -44,9 +46,9 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup,refreshTokenMiddleware gin.H
 func (h *Handler) CreateUser(c *gin.Context) {
 
 	var createdUser UserDTO
-	var user CreateUserSchema
+	var user types.CreateUserSchema
 	var err error
-	user, err = validation.BindAndValidate[CreateUserSchema](c.Request)
+	user, err = validation.ValidateRequestBody[types.CreateUserSchema](c.Request)
 	if err != nil {
 		h.logger.Error("Failed to bind and validate request", slog.Any("error", err))
 		c.JSON(http.StatusBadRequest,response.NewErrorResponse("VALIDATION_ERROR",err.Error()))
@@ -58,7 +60,7 @@ func (h *Handler) CreateUser(c *gin.Context) {
 	if err != nil {
 		h.logger.Error("Failed to create user", slog.Any("error", err))
 		// Handle business errors
-		if err == ErrUserAlreadyExists {
+		if err == shared.ErrUserAlreadyExists {
 			c.JSON(http.StatusBadRequest, response.NewErrorResponse("USER_ALREADY_EXISTS", err.Error()))
 			return
 		}
@@ -75,7 +77,7 @@ func (h *Handler) LoginUser(c *gin.Context) {
 	var tokenResponse TokenResponse 
 	var user LoginUserSchema
 	var err error
-	user, err = validation.BindAndValidate[LoginUserSchema](c.Request)
+	user, err = validation.ValidateRequestBody[LoginUserSchema](c.Request)
 	if err != nil {
 		h.logger.Error("Failed to bind and validate request", slog.Any("error", err))
 		c.JSON(http.StatusBadRequest,response.NewErrorResponse("VALIDATION_ERROR",err.Error()))
@@ -87,7 +89,7 @@ func (h *Handler) LoginUser(c *gin.Context) {
 	if err != nil {
 		h.logger.Error("Failed to login user", slog.Any("error", err))
 		// Handle business errors
-		if err == ErrInvalidCredentials {
+		if err == shared.ErrInvalidCredentials {
 			c.JSON(http.StatusBadRequest, response.NewErrorResponse("INVALID_CREDENTIALS", err.Error()))
 			return
 		}
@@ -127,13 +129,13 @@ func (h *Handler) LogoutUser(c *gin.Context) {
 	if err != nil {
 		h.logger.Error("Failed to logout user", slog.Any("error", err))
 		// Handle business errors
-		if err == ErrUserNotFound {
+		if err == shared.ErrUserNotFound {
 			// Clear cookie
 		    setCookie(c,"",-1)
 			c.JSON(http.StatusBadRequest, response.NewErrorResponse("USER_NOT_FOUND", err.Error()))
 			return
 		}
-		if err == ErrTokenVersionMismatch {
+		if err == shared.ErrTokenVersionMismatch {
 			// Clear cookie
 		    setCookie(c,"",-1)
 			c.JSON(http.StatusBadRequest, response.NewErrorResponse("TOKEN_VERSION_MISMATCH", err.Error()))
@@ -176,13 +178,13 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 		h.logger.Error("Failed to logout user", slog.Any("error", err))
 		
 		// Handle business errors
-		if err == ErrUserNotFound {
+		if err == shared.ErrUserNotFound {
 			// Clear cookie
 		    setCookie(c,"",-1)
 			c.JSON(http.StatusBadRequest, response.NewErrorResponse("USER_NOT_FOUND", err.Error()))
 			return
 		}
-		if err == ErrTokenVersionMismatch {
+		if err == shared.ErrTokenVersionMismatch {
 			// Clear cookie
 		    setCookie(c,"",-1)
 			c.JSON(http.StatusBadRequest, response.NewErrorResponse("TOKEN_VERSION_MISMATCH", err.Error()))
