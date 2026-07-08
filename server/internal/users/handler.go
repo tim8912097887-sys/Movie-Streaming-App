@@ -132,7 +132,7 @@ func (h *Handler) LogoutUser(c *gin.Context) {
 		if err == shared.ErrUserNotFound {
 			// Clear cookie
 		    setCookie(c,"",-1)
-			c.JSON(http.StatusBadRequest, response.NewErrorResponse("USER_NOT_FOUND", err.Error()))
+			c.JSON(http.StatusNotFound, response.NewErrorResponse("USER_NOT_FOUND", err.Error()))
 			return
 		}
 		if err == shared.ErrTokenVersionMismatch {
@@ -181,7 +181,7 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 		if err == shared.ErrUserNotFound {
 			// Clear cookie
 		    setCookie(c,"",-1)
-			c.JSON(http.StatusBadRequest, response.NewErrorResponse("USER_NOT_FOUND", err.Error()))
+			c.JSON(http.StatusNotFound, response.NewErrorResponse("USER_NOT_FOUND", err.Error()))
 			return
 		}
 		if err == shared.ErrTokenVersionMismatch {

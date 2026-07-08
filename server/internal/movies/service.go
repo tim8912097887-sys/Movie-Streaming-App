@@ -15,8 +15,9 @@ type UserRepository interface {
 }
 
 type MovieRepository interface {
-	GetMovies(ctx context.Context, paginationParams PaginationParams) ([]Movie,error)
-    GetMoviesByGenres(ctx context.Context, genres []types.Genres) ([]Movie,error)
+	GetMovies(ctx context.Context, paginationParams types.PaginationParams) ([]types.Movie,error)
+    GetMoviesByGenres(ctx context.Context, genres []types.Genres) ([]types.Movie,error)
+	GetMovieById(ctx context.Context, id string) (types.Movie, error)
 }
 
 type service struct {
@@ -31,7 +32,7 @@ func NewMovieService(repository MovieRepository, userRepository UserRepository) 
 	}
 }
 
-func (s *service) GetMovies(ctx context.Context, paginationParams PaginationParams) ([]MovieDTO,error) {
+func (s *service) GetMovies(ctx context.Context, paginationParams types.PaginationParams) ([]MovieDTO,error) {
 	movies, err := s.repository.GetMovies(ctx, paginationParams)
 	if err != nil {
 	   return []MovieDTO{}, nil	
@@ -74,7 +75,7 @@ func (s *service) GetUserMovie(ctx context.Context, userId string,tokenVersion i
 	return moviesDTO, nil
 }
 
-func (s *service) DataToDTO(data Movie) MovieDTO {
+func (s *service) DataToDTO(data types.Movie) MovieDTO {
 	return MovieDTO{
 		ID:          data.ID,
 		Title:       data.Title,

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/tim8912097887-sys/server/internal/admin"
 	"github.com/tim8912097887-sys/server/internal/auth"
 	"github.com/tim8912097887-sys/server/internal/configs"
 	"github.com/tim8912097887-sys/server/internal/movies"
@@ -16,6 +17,7 @@ import (
 	"github.com/tim8912097887-sys/server/internal/users"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
+	"google.golang.org/genai"
 )
 
 type ApiConfig struct {
@@ -27,7 +29,7 @@ type Api struct {
 	Config ApiConfig
 }
 
-func (a *Api) Mount(dbClient *mongo.Client) http.Handler {
+func (a *Api) Mount(dbClient *mongo.Client,geminiClient *genai.Client) http.Handler {
 	router := gin.Default()
 
 	router.GET("/health", func(c *gin.Context) {
@@ -61,6 +63,14 @@ func (a *Api) Mount(dbClient *mongo.Client) http.Handler {
 	movieHandlerConfig := movies.MovieHandlerConfig{MovieService: movieService, Logger: a.Config.Logger}
 	movieHandler := movies.NewMovieHandler(movieHandlerConfig)
 	movieHandler.RegisterRoutes(movieRouter, accessTokenMiddleware)
+
+	// Register admin routes
+	adminRouter := v1Router.Group("/admin")
+	adminServiceConfig := admin.AdminServiceConfig{UserRepository: userRepository, MovieRepository: movieRepository, GenaiClient: geminiClient}
+	adminService := admin.NewAdminService(adminServiceConfig)
+	adminHandlerConfig := admin.AdminHandlerConfig{Logger: a.Config.Logger, EnvConfigs: a.Config.EnvConfigs, AdminService: adminService}
+	adminHandler := admin.NewAdminHandler(adminHandlerConfig)
+	adminHandler.RegisterRoutes(adminRouter, accessTokenMiddleware)
 	return router
 }
 

@@ -8,11 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/tim8912097887-sys/server/internal/shared"
 	"github.com/tim8912097887-sys/server/internal/shared/response"
+	"github.com/tim8912097887-sys/server/internal/shared/types"
 	"github.com/tim8912097887-sys/server/internal/shared/validation"
 )
 
 type MovieService interface {
-	GetMovies(ctx context.Context,paginationParams PaginationParams) ([]MovieDTO,error)
+	GetMovies(ctx context.Context,paginationParams types.PaginationParams) ([]MovieDTO,error)
     GetUserMovie(ctx context.Context,userId string,tokenVersion int) ([]MovieDTO,error)
 }
 
@@ -40,7 +41,7 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup,accessMiddleware gin.Handler
 
 func (h *Handler) GetMovies(c *gin.Context) {
      
-	paginationParams, err := validation.ValidateQueryParams[PaginationParams](c)
+	paginationParams, err := validation.ValidateQueryParams[types.PaginationParams](c)
 
 	if err != nil {
 		h.logger.Error("Failed to bind and validate request", slog.Any("error", err))
@@ -90,7 +91,7 @@ func (h *Handler) GetUserMovie(c *gin.Context) {
 		return
 	}
 	if err == shared.ErrUserNotFound {
-		c.JSON(http.StatusBadRequest, response.NewErrorResponse("USER_NOT_FOUND", err.Error()))
+		c.JSON(http.StatusNotFound, response.NewErrorResponse("USER_NOT_FOUND", err.Error()))
 		return
 	}
 	if err != nil {

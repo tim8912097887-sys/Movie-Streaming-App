@@ -11,6 +11,7 @@ import (
 	"github.com/tim8912097887-sys/server/cmd/api"
 	"github.com/tim8912097887-sys/server/internal/configs"
 	"github.com/tim8912097887-sys/server/internal/db"
+	"google.golang.org/genai"
 )
 
 func main() {
@@ -46,7 +47,13 @@ func main() {
 		}
 	}()
 
+	geminiClient, err := genai.NewClient(ctx, nil)
+
+	if err != nil {
+		logger.Error("Failed to create client", slog.Any("error", err))
+	}
+
 	apiConfig := api.ApiConfig{Logger: logger, EnvConfigs: envConfigs}
 	api := api.Api{Config: apiConfig}
-	api.Run(ctx, api.Mount(dbClient), 8*time.Second)
+	api.Run(ctx, api.Mount(dbClient, geminiClient), 8*time.Second)
 }

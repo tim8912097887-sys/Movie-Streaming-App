@@ -1,6 +1,10 @@
 package types
 
-import "go.mongodb.org/mongo-driver/v2/bson"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/v2/bson"
+)
 
 type User struct {
 	ID             bson.ObjectID `json:"id" bson:"_id,omitempty"`
@@ -8,6 +12,7 @@ type User struct {
 	Email          string        `json:"email" bson:"email"`
 	Password       string        `json:"password" bson:"password"`
 	TokenVersion   int           `json:"token_version" bson:"token_version"`
+	Role           string        `json:"role" bson:"role"`
 	FavoriteGenres []Genres      `json:"favorite_genres" bson:"favorite_genres"`
 }
 
@@ -26,4 +31,28 @@ type CreateUserSchema struct {
 type UpdateUserSchema struct {
 	Id              string  
 	TokenVersion    int   
+}
+
+type PaginationParams struct {
+    // If not provided, defaults to 0. Must be 0 or greater.
+    Offset int `form:"offset,default=0" binding:"min=0"`
+    
+    // If not provided, defaults to 10. Must be between 1 and 100.
+    Limit  int `form:"limit,default=10" binding:"gt=0,lte=100"`
+}
+
+type Movie struct {
+	ID          bson.ObjectID `json:"id" bson:"_id,omitempty"`
+	Title       string        `json:"title" bson:"title"`
+	Description string        `json:"description" bson:"description"`
+	YoutubeID   string        `json:"youtube_id" bson:"youtube_id"`
+	Rating      float64       `json:"rating" bson:"rating"`
+	PosterURL   string        `json:"poster_url" bson:"poster_url"`
+	Genres      []Genres      `json:"genres" bson:"genres"`
+	CreatedAt   time.Time         `json:"created_at" bson:"created_at"`
+}
+
+type UpdateMovieSchema struct {
+	ID          bson.ObjectID `json:"id" bson:"_id,omitempty"`
+	Rating      float64 `json:"rating" bson:"rating"`
 }
