@@ -13,6 +13,7 @@ type Configs struct{
 	AccessTokenSecret string
 	DbUrl string
 	DbName string
+	GEMINI_API_KEY string
 }
 
 func InitConfigs() Configs {
@@ -25,6 +26,7 @@ func InitConfigs() Configs {
 		AccessTokenSecret: getEnv("ACCESS_TOKEN_SECRET", "secret"),
 		DbUrl: getEnv("DB_URL", "mongodb://localhost:27017"),
 		DbName: getEnv("DB_NAME", "movie_streaming"),
+		GEMINI_API_KEY: getEnv("GEMINI_API_KEY", ""),
 	}
 }
 

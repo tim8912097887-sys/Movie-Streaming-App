@@ -3,6 +3,7 @@ package movies
 import (
 	"context"
 
+	"github.com/tim8912097887-sys/server/internal/shared"
 	"github.com/tim8912097887-sys/server/internal/shared/types"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -19,7 +20,7 @@ func NewMovieRepository(collection *mongo.Collection) *repository {
 	}
 }
 
-func (r *repository) GetMovies(ctx context.Context, paginationParams PaginationParams) ([]Movie, error) {
+func (r *repository) GetMovies(ctx context.Context, paginationParams types.PaginationParams) ([]types.Movie, error) {
 	sortCriteria := bson.D{
 		{Key: "created_at", Value: -1},
 	}
@@ -27,23 +28,23 @@ func (r *repository) GetMovies(ctx context.Context, paginationParams PaginationP
 
 	cursor, err := r.collection.Find(ctx, bson.D{}, option)
 	if err != nil {
-		return []Movie{}, err
+		return []types.Movie{}, err
 	}
 
 	defer cursor.Close(ctx)
 
-	var movies []Movie
+	var movies []types.Movie
 
 	err = cursor.All(ctx, &movies)
 
 	if err != nil {
-		return []Movie{}, err
+		return []types.Movie{}, err
 	}
 
 	return movies, nil
 }
 
-func (r *repository) GetMoviesByGenres(ctx context.Context, genres []types.Genres) ([]Movie, error) {
+func (r *repository) GetMoviesByGenres(ctx context.Context, genres []types.Genres) ([]types.Movie, error) {
 	generesIds := make([]int, len(genres))
 
 	for i, genre := range genres {
@@ -55,19 +56,50 @@ func (r *repository) GetMoviesByGenres(ctx context.Context, genres []types.Genre
  
 	cursor, err := r.collection.Find(ctx, filter, option)
 	if err != nil {
-		return []Movie{}, err
+		return []types.Movie{}, err
 	}
 
 	defer cursor.Close(ctx)
 
-	var movies []Movie
+	var movies []types.Movie
 
 	err = cursor.All(ctx, &movies)
 
 	if err != nil {
-		return []Movie{}, err
+		return []types.Movie{}, err
 	}
 
 	return movies, nil
 
+}
+
+func (r *repository) GetMovieById(ctx context.Context, id string) (types.Movie, error) {
+	var movie types.Movie
+
+	idObjectID, err := bson.ObjectIDFromHex(id)
+	if err != nil {
+		return types.Movie{}, shared.ErrMovieNotFound
+	}
+
+	err = r.collection.FindOne(ctx, bson.M{"_id": idObjectID}).Decode(&movie)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return types.Movie{}, shared.ErrMovieNotFound
+		}
+		return types.Movie{}, err
+	}
+	return movie, nil
+}
+
+func (r *repository) UpdateMovie (ctx context.Context, movie types.UpdateMovieSchema) error {
+	update := bson.M{
+        "$set": bson.M{
+            "rating": movie.Rating,
+        },
+    }
+	_, err := r.collection.UpdateOne(ctx, bson.M{"_id": movie.ID}, update)
+	if err != nil {
+		return err
+	}
+	return nil
 }
