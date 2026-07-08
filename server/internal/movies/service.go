@@ -35,7 +35,7 @@ func NewMovieService(repository MovieRepository, userRepository UserRepository) 
 func (s *service) GetMovies(ctx context.Context, paginationParams types.PaginationParams) ([]MovieDTO,error) {
 	movies, err := s.repository.GetMovies(ctx, paginationParams)
 	if err != nil {
-	   return []MovieDTO{}, nil	
+	   return []MovieDTO{}, err	
 	}
 
 	var moviesDTO = make([]MovieDTO,len(movies))
@@ -44,7 +44,7 @@ func (s *service) GetMovies(ctx context.Context, paginationParams types.Paginati
 		moviesDTO[i] = s.DataToDTO(movie)
 	}
 
-	return moviesDTO, err
+	return moviesDTO, nil
 }
 
 func (s *service) GetUserMovie(ctx context.Context, userId string,tokenVersion int) ([]MovieDTO,error) {
