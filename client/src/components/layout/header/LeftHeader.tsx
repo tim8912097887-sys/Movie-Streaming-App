@@ -1,5 +1,5 @@
-import FlexContainer from "../ui/FlexContainer";
-import PageLink from "../ui/PageLink";
+import FlexContainer from "../../ui/FlexContainer";
+import PageLink from "../../ui/PageLink";
 
 const LeftHeader = () => {
   return (

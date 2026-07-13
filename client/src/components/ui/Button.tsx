@@ -20,15 +20,22 @@ type ButtonProps = {
   color: keyof typeof BUTTON_COLORS;
   btnType: keyof typeof BUTTON_TYPES;
   buttonProps?: React.ButtonHTMLAttributes<HTMLButtonElement>;
+  children: React.ReactNode;
 };
 
-const Button = ({ size, color, btnType, buttonProps }: ButtonProps) => {
+const Button = ({
+  size,
+  color,
+  btnType,
+  buttonProps,
+  children,
+}: ButtonProps) => {
   return (
     <button
       {...buttonProps}
-      className={`${BUTTON_SIZES[size]} ${BUTTON_COLORS[color]} ${BUTTON_TYPES[btnType]}`}
+      className={`cursor-pointer ${BUTTON_SIZES[size]} ${BUTTON_COLORS[color]} ${BUTTON_TYPES[btnType]}`}
     >
-      {buttonProps?.children}
+      {children}
     </button>
   );
 };
