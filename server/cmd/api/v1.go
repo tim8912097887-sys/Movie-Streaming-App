@@ -40,6 +40,8 @@ func (a *Api) Mount(dbClient *mongo.Client,geminiClient *genai.Client) http.Hand
 
 	v1Router :=router.Group("/api/v1")
 
+	// Register timeout middleware
+	v1Router.Use(middlewares.TimeoutMiddleware(5*time.Second))
 	// Register user routes
 	userRouter := v1Router.Group("/users")
 	passwordService := auth.NewPasswordService()

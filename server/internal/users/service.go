@@ -50,7 +50,7 @@ func NewUserService(userServiceConfig UserServiceConfig) *service {
 }
 
 func (s *service) createUser(ctx context.Context, userPayload types.CreateUserSchema) (UserDTO, error) {
-
+    
 	existUser, err := s.repository.FindUserByEmail(ctx, userPayload.Email)
 	if err != nil && err != shared.ErrUserNotFound {
 		return UserDTO{}, err
@@ -66,13 +66,14 @@ func (s *service) createUser(ctx context.Context, userPayload types.CreateUserSc
 	 }
 
 	 userPayload.Password = hashedPassword
-
+      
 	 var createdUser types.User
 
 	 createdUser, err = s.repository.CreateUser(ctx, userPayload)
 	 if err != nil {
 		return UserDTO{}, err
 	 }
+
 	 return s.DataToDTO(createdUser), nil
 }
 

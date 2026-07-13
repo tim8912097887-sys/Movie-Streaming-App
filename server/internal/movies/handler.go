@@ -2,6 +2,7 @@ package movies
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 
@@ -51,6 +52,18 @@ func (h *Handler) GetMovies(c *gin.Context) {
 
 	movies, err := h.movieService.GetMovies(c.Request.Context(), paginationParams)
 
+	// Timeout or cancel error
+	if errors.Is(err, context.DeadlineExceeded) {
+		c.JSON(http.StatusGatewayTimeout,
+		response.NewErrorResponse("REQUEST_TIMEOUT", "Request timed out"))
+		return
+	}
+
+	if errors.Is(err, context.Canceled) {
+		h.logger.Info("Request canceled", slog.Any("error", err))
+		return 
+	}
+
 	if err != nil {
 		h.logger.Error("Failed to get movies", slog.Any("error", err))
 		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", err.Error()))
@@ -94,6 +107,19 @@ func (h *Handler) GetUserMovie(c *gin.Context) {
 		c.JSON(http.StatusNotFound, response.NewErrorResponse("USER_NOT_FOUND", err.Error()))
 		return
 	}
+
+	// Timeout or cancel error
+	if errors.Is(err, context.DeadlineExceeded) {
+		c.JSON(http.StatusGatewayTimeout,
+		response.NewErrorResponse("REQUEST_TIMEOUT", "Request timed out"))
+		return
+	}
+
+	if errors.Is(err, context.Canceled) {
+		h.logger.Info("Request canceled", slog.Any("error", err))
+		return 
+	}
+
 	if err != nil {
 		h.logger.Error("Failed to get movies", slog.Any("error", err))
 		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", err.Error()))
