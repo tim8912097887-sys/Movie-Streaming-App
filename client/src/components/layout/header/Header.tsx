@@ -1,4 +1,4 @@
-import FlexContainer from "../ui/FlexContainer";
+import FlexContainer from "../../ui/FlexContainer";
 import LeftHeader from "./LeftHeader";
 import RightHeader from "./RightHeader";
 
