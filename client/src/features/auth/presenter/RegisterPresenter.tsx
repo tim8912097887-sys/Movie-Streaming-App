@@ -10,6 +10,7 @@ import ErrorText from "../../../components/ui/ErrorText";
 import useFormSubmit from "../hook/useFormSubmit";
 import { Spinner } from "../../../components/ui/Spinner";
 import { useEffect } from "react";
+import { toast } from "react-toastify";
 
 const genres = [
   { genre_id: 1, name: "Comedy" },
@@ -54,7 +55,13 @@ const RegisterPresenter = ({ onSubmit }: RegisterPresenterProps) => {
   };
 
   useEffect(() => {
-    if (status.isSuccess) navigate("/login");
+    if (status.isSuccess) {
+      toast.success("Register successfully", {
+        autoClose: 1500,
+        position: "top-right",
+        onClose: () => navigate("/login"),
+      });
+    }
   }, [status.isSuccess]);
 
   return (
