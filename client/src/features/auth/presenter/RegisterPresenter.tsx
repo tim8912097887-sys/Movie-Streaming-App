@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router";
 import Button from "../../../components/ui/Button";
 import Form from "../ui/Form";
 import GenreSelector from "../ui/GenreSelector";
@@ -6,6 +7,9 @@ import InputGroup from "../ui/InputGroup";
 import { registerSchema, type RegisterSchema } from "../schema/register";
 import { useFormData } from "../hook/useFormData";
 import ErrorText from "../../../components/ui/ErrorText";
+import useFormSubmit from "../hook/useFormSubmit";
+import { Spinner } from "../../../components/ui/Spinner";
+import { useEffect } from "react";
 
 const genres = [
   { genre_id: 1, name: "Comedy" },
@@ -20,10 +24,11 @@ const genres = [
 ];
 
 type RegisterPresenterProps = {
-  onSubmit: (data: RegisterSchema) => void;
+  onSubmit: (data: RegisterSchema) => Promise<void>;
 };
 
 const RegisterPresenter = ({ onSubmit }: RegisterPresenterProps) => {
+  const navigate = useNavigate();
   const { formData, handleChange, errors } = useFormData<RegisterSchema>({
     initialValues: {
       name: "",
@@ -38,14 +43,23 @@ const RegisterPresenter = ({ onSubmit }: RegisterPresenterProps) => {
     handleChange({ target: { name: "favorite_genres", value: genres } } as any);
   };
 
-  const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
+  const { handleSubmit, status } = useFormSubmit<RegisterSchema>({
+    submitFunction: onSubmit,
+    validateSchema: registerSchema,
+  });
+
+  const formSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    onSubmit(formData);
+    await handleSubmit(formData);
   };
+
+  useEffect(() => {
+    if (status.isSuccess) navigate("/login");
+  }, [status.isSuccess]);
 
   return (
     <div className="w-70 md:w-100 rounded-xl border border-gray-200 bg-slate-300 p-8 shadow-lg md:p-12">
-      <Form onSubmit={handleSubmit}>
+      <Form onSubmit={formSubmit}>
         <Form.Head>Register Movie Streaming</Form.Head>
         <Form.Content>
           <InputGroup name="name" label="Name">
@@ -100,14 +114,19 @@ const RegisterPresenter = ({ onSubmit }: RegisterPresenterProps) => {
           <Button
             buttonProps={{
               type: "submit",
-              disabled: Object.keys(errors).length > 0,
+              disabled: Object.keys(errors).length > 0 || status.isSubmitting,
             }}
             size="md"
             color="primary"
             btnType="normal"
           >
-            Register
+            {status.isSubmitting ? (
+              <Spinner size="sm" color="primary" />
+            ) : (
+              "Register"
+            )}
           </Button>
+          {status.error && <ErrorText>{status.error}</ErrorText>}
         </Form.Footer>
       </Form>
     </div>
