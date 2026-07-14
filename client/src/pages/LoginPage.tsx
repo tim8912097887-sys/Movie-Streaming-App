@@ -3,7 +3,8 @@ import PageContainer from "../components/ui/PageContainer";
 import type { LoginSchema } from "../features/auth/schema/login";
 
 const LoginPage = () => {
-  const handleLogin = (data: LoginSchema) => {
+  const handleLogin = async (data: LoginSchema) => {
+    await new Promise((resolve) => setTimeout(resolve, 3000));
     console.log(data);
   };
 

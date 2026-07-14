@@ -33,7 +33,7 @@ const Button = ({
   return (
     <button
       {...buttonProps}
-      className={`cursor-pointer ${BUTTON_SIZES[size]} ${BUTTON_COLORS[color]} ${BUTTON_TYPES[btnType]}`}
+      className={`flex justify-center items-center cursor-pointer ${BUTTON_SIZES[size]} ${BUTTON_COLORS[color]} ${BUTTON_TYPES[btnType]}`}
     >
       {children}
     </button>
