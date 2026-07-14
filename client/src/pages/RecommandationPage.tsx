@@ -1,6 +1,6 @@
 import MoviePresenter, {
   type Movie,
-} from "../components/layout/movie/MoviePresenter";
+} from "../features/movie/presenter/MoviePresenter";
 import PageContainer from "../components/ui/PageContainer";
 
 const movies: Movie[] = [
