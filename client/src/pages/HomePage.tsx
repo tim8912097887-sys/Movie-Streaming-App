@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import MoviePresenter, {
   type Movie,
-} from "../components/layout/movie/MoviePresenter";
+} from "../features/movie/presenter/MoviePresenter";
 import PageContainer from "../components/ui/PageContainer";
 import PaginationPresenter from "../components/layout/pagination/PaginationPresenter";
 
