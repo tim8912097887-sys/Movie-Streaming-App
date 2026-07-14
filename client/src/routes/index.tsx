@@ -3,6 +3,7 @@ import RootLayout from "../layouts/RootLayout";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
 import RecommandationPage from "../pages/RecommandationPage";
+import HomePage from "../pages/HomePage";
 
 const router = createBrowserRouter([
   {
@@ -10,7 +11,7 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <div>Home</div>,
+        element: <HomePage />,
       },
       {
         path: "/recommendations",

@@ -1,3 +1,5 @@
+import { twMerge } from "tailwind-merge";
+
 type PageContainerProps = {
   children: React.ReactNode;
   customClass?: string;
@@ -6,7 +8,10 @@ type PageContainerProps = {
 const PageContainer = ({ children, customClass }: PageContainerProps) => {
   return (
     <div
-      className={`flex min-h-full items-center justify-center py-8 md:py-12 ${customClass}`}
+      className={twMerge(
+        `flex min-h-full items-center justify-center py-8 md:py-12`,
+        customClass,
+      )}
     >
       {children}
     </div>
