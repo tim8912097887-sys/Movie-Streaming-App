@@ -1,10 +1,11 @@
-import { useState } from "react";
 import Button from "../../../components/ui/Button";
 import Form from "../ui/Form";
 import GenreSelector from "../ui/GenreSelector";
 import Input from "../ui/Input";
 import InputGroup from "../ui/InputGroup";
-import type { RegisterSchema } from "../schema/register";
+import { registerSchema, type RegisterSchema } from "../schema/register";
+import { useFormData } from "../hook/useFormData";
+import ErrorText from "../../../components/ui/ErrorText";
 
 const genres = [
   { genre_id: 1, name: "Comedy" },
@@ -23,15 +24,18 @@ type RegisterPresenterProps = {
 };
 
 const RegisterPresenter = ({ onSubmit }: RegisterPresenterProps) => {
-  const [formData, setFormData] = useState<RegisterSchema>({
-    name: "",
-    email: "",
-    password: "",
-    favorite_genres: [],
+  const { formData, handleChange, errors } = useFormData<RegisterSchema>({
+    initialValues: {
+      name: "",
+      email: "",
+      password: "",
+      favorite_genres: [],
+    },
+    schemaValidater: registerSchema,
   });
 
   const setGenres = (genres: RegisterSchema["favorite_genres"]) => {
-    setFormData({ ...formData, favorite_genres: genres });
+    handleChange({ target: { name: "favorite_genres", value: genres } } as any);
   };
 
   const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
@@ -52,11 +56,10 @@ const RegisterPresenter = ({ onSubmit }: RegisterPresenterProps) => {
                 placeholder: "name",
                 name: "name",
                 id: "name",
-                onChange: (e) => {
-                  setFormData({ ...formData, name: e.target.value });
-                },
+                onChange: handleChange,
               }}
             />
+            {errors.name && <ErrorText>{errors.name}</ErrorText>}
           </InputGroup>
           <InputGroup name="email" label="Email">
             <Input
@@ -66,11 +69,10 @@ const RegisterPresenter = ({ onSubmit }: RegisterPresenterProps) => {
                 placeholder: "example@ex.com",
                 name: "email",
                 id: "email",
-                onChange: (e) => {
-                  setFormData({ ...formData, email: e.target.value });
-                },
+                onChange: handleChange,
               }}
             />
+            {errors.email && <ErrorText>{errors.email}</ErrorText>}
           </InputGroup>
           <InputGroup name="password" label="Password">
             <Input
@@ -80,21 +82,26 @@ const RegisterPresenter = ({ onSubmit }: RegisterPresenterProps) => {
                 placeholder: "password",
                 name: "password",
                 id: "password",
-                onChange: (e) => {
-                  setFormData({ ...formData, password: e.target.value });
-                },
+                onChange: handleChange,
               }}
             />
+            {errors.password && <ErrorText>{errors.password}</ErrorText>}
           </InputGroup>
           <GenreSelector
             genres={genres}
             selectedGenres={formData.favorite_genres}
             onChange={setGenres}
           />
+          {errors.favorite_genres && (
+            <ErrorText>{errors.favorite_genres}</ErrorText>
+          )}
         </Form.Content>
         <Form.Footer>
           <Button
-            buttonProps={{ type: "submit" }}
+            buttonProps={{
+              type: "submit",
+              disabled: Object.keys(errors).length > 0,
+            }}
             size="md"
             color="primary"
             btnType="normal"
