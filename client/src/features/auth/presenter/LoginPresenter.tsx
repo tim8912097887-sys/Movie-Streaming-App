@@ -1,18 +1,22 @@
-import { useState } from "react";
 import Button from "../../../components/ui/Button";
-import type { LoginSchema } from "../schema/login";
+import { loginSchema, type LoginSchema } from "../schema/login";
 import Form from "../ui/Form";
 import Input from "../ui/Input";
 import InputGroup from "../ui/InputGroup";
+import { useFormData } from "../hook/useFormData";
+import ErrorText from "../../../components/ui/ErrorText";
 
 type LoginPresenterProps = {
   onSubmit: (data: LoginSchema) => void;
 };
 
 const LoginPresenter = ({ onSubmit }: LoginPresenterProps) => {
-  const [formData, setFormData] = useState<LoginSchema>({
-    email: "",
-    password: "",
+  const { formData, handleChange, errors } = useFormData<LoginSchema>({
+    initialValues: {
+      email: "",
+      password: "",
+    },
+    schemaValidater: loginSchema,
   });
 
   const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
@@ -33,11 +37,10 @@ const LoginPresenter = ({ onSubmit }: LoginPresenterProps) => {
                 placeholder: "example@ex.com",
                 name: "email",
                 id: "email",
-                onChange: (e) => {
-                  setFormData({ ...formData, email: e.target.value });
-                },
+                onChange: handleChange,
               }}
             />
+            {errors.email && <ErrorText>{errors.email}</ErrorText>}
           </InputGroup>
           <InputGroup name="password" label="Password">
             <Input
@@ -47,16 +50,18 @@ const LoginPresenter = ({ onSubmit }: LoginPresenterProps) => {
                 placeholder: "password",
                 name: "password",
                 id: "password",
-                onChange: (e) => {
-                  setFormData({ ...formData, password: e.target.value });
-                },
+                onChange: handleChange,
               }}
             />
+            {errors.password && <ErrorText>{errors.password}</ErrorText>}
           </InputGroup>
         </Form.Content>
         <Form.Footer>
           <Button
-            buttonProps={{ type: "submit" }}
+            buttonProps={{
+              type: "submit",
+              disabled: Object.keys(errors).length > 0,
+            }}
             size="md"
             color="primary"
             btnType="normal"
