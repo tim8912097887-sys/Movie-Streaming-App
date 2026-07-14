@@ -9,6 +9,7 @@ import useFormSubmit from "../hook/useFormSubmit";
 import { Spinner } from "../../../components/ui/Spinner";
 import { useNavigate } from "react-router";
 import { useEffect } from "react";
+import { toast } from "react-toastify";
 
 type LoginPresenterProps = {
   onSubmit: (data: LoginSchema) => Promise<void>;
@@ -35,7 +36,13 @@ const LoginPresenter = ({ onSubmit }: LoginPresenterProps) => {
   };
 
   useEffect(() => {
-    if (status.isSuccess) navigate("/recommendations");
+    if (status.isSuccess) {
+      toast.success("Login successfully", {
+        autoClose: 1500,
+        position: "top-right",
+        onClose: () => navigate("/recommendations"),
+      });
+    }
   }, [status.isSuccess]);
 
   return (
