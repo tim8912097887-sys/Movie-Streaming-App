@@ -1,14 +1,14 @@
 import { useNavigate } from "react-router";
-import Button from "../../../components/ui/Button";
+import Button from "../../../shared/components/ui/Button";
 import Form from "../ui/Form";
 import GenreSelector from "../ui/GenreSelector";
 import Input from "../ui/Input";
 import InputGroup from "../ui/InputGroup";
 import { registerSchema, type RegisterSchema } from "../schema/register";
 import { useFormData } from "../hook/useFormData";
-import ErrorText from "../../../components/ui/ErrorText";
-import useFormSubmit from "../hook/useFormSubmit";
-import { Spinner } from "../../../components/ui/Spinner";
+import ErrorText from "../../../shared/components/ui/ErrorText";
+import useFetch from "../../../shared/hooks/useFetch";
+import { Spinner } from "../../../shared/components/ui/Spinner";
 import { useEffect } from "react";
 import { toast } from "react-toastify";
 
@@ -44,14 +44,14 @@ const RegisterPresenter = ({ onSubmit }: RegisterPresenterProps) => {
     handleChange({ target: { name: "favorite_genres", value: genres } } as any);
   };
 
-  const { handleSubmit, status } = useFormSubmit<RegisterSchema>({
-    submitFunction: onSubmit,
+  const { handleFetch, status } = useFetch<RegisterSchema, void>({
+    fetchFunction: onSubmit,
     validateSchema: registerSchema,
   });
 
   const formSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    await handleSubmit(formData);
+    await handleFetch(formData);
   };
 
   useEffect(() => {
@@ -121,13 +121,13 @@ const RegisterPresenter = ({ onSubmit }: RegisterPresenterProps) => {
           <Button
             buttonProps={{
               type: "submit",
-              disabled: Object.keys(errors).length > 0 || status.isSubmitting,
+              disabled: Object.keys(errors).length > 0 || status.isFetching,
             }}
             size="md"
             color="primary"
             btnType="normal"
           >
-            {status.isSubmitting ? (
+            {status.isFetching ? (
               <Spinner size="sm" color="primary" />
             ) : (
               "Register"

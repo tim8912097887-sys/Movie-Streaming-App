@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import MoviePresenter, {
   type Movie,
 } from "../features/movie/presenter/MoviePresenter";
-import PageContainer from "../components/ui/PageContainer";
+import PageContainer from "../shared/components/ui/PageContainer";
+import useFetch from "../shared/hooks/useFetch";
 
 const movies: Movie[] = [
   {
@@ -34,10 +36,34 @@ const movies: Movie[] = [
   },
 ];
 
+const fetchMovies = async () => {
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+  const response = {
+    totalPage: 20,
+    currentPage: 1,
+    data: movies,
+  };
+  return response;
+};
+
 const RecommandationPage = () => {
+  const { handleFetch, status } = useFetch({
+    fetchFunction: fetchMovies,
+  });
+
+  useEffect(() => {
+    const fetchMoviesData = async () => {
+      await handleFetch(1);
+    };
+
+    fetchMoviesData();
+  }, []);
   return (
     <PageContainer>
-      <MoviePresenter movies={movies} />
+      <MoviePresenter
+        movies={status.fetchedData?.data || []}
+        isLoading={status.isFetching}
+      />
     </PageContainer>
   );
 };

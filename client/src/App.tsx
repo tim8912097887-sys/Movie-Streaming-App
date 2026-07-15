@@ -1,6 +1,7 @@
 import { RouterProvider } from "react-router";
 import router from "./routes";
 import { ToastContainer } from "react-toastify";
+import "react-loading-skeleton/dist/skeleton.css";
 
 function App() {
   return (

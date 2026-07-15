@@ -1,4 +1,5 @@
 import Card from "../ui/Card";
+import CardSkeleton from "../ui/CardSkeleton";
 
 export type Movie = {
   title: string;
@@ -9,13 +10,24 @@ export type Movie = {
 
 type MoviePresenterProps = {
   movies: Movie[];
+  isLoading: boolean;
 };
 
-const MoviePresenter = ({ movies }: MoviePresenterProps) => {
+const MoviePresenter = ({ movies, isLoading }: MoviePresenterProps) => {
+  if (isLoading && movies.length === 0) {
+    return (
+      <div className="h-full w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 justify-items-center">
+        {Array.from({ length: 8 }).map((_, index) => (
+          <CardSkeleton key={index} />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="h-full w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 justify-items-center">
-      {movies.map((movie) => (
-        <Card key={movie.title}>
+      {movies.map((movie, key) => (
+        <Card key={key}>
           <Card.Head>
             <img
               src={movie.image}
