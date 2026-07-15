@@ -1,5 +1,5 @@
 import LoginPresenter from "../features/auth/presenter/LoginPresenter";
-import PageContainer from "../components/ui/PageContainer";
+import PageContainer from "../shared/components/ui/PageContainer";
 import type { LoginSchema } from "../features/auth/schema/login";
 
 const LoginPage = () => {

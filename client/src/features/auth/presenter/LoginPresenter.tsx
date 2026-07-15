@@ -1,12 +1,12 @@
-import Button from "../../../components/ui/Button";
+import Button from "../../../shared/components/ui/Button";
 import { loginSchema, type LoginSchema } from "../schema/login";
 import Form from "../ui/Form";
 import Input from "../ui/Input";
 import InputGroup from "../ui/InputGroup";
 import { useFormData } from "../hook/useFormData";
-import ErrorText from "../../../components/ui/ErrorText";
-import useFormSubmit from "../hook/useFormSubmit";
-import { Spinner } from "../../../components/ui/Spinner";
+import ErrorText from "../../../shared/components/ui/ErrorText";
+import useFetch from "../../../shared/hooks/useFetch";
+import { Spinner } from "../../../shared/components/ui/Spinner";
 import { useNavigate } from "react-router";
 import { useEffect } from "react";
 import { toast } from "react-toastify";
@@ -25,14 +25,14 @@ const LoginPresenter = ({ onSubmit }: LoginPresenterProps) => {
     schemaValidater: loginSchema,
   });
 
-  const { handleSubmit, status } = useFormSubmit<LoginSchema>({
-    submitFunction: onSubmit,
+  const { handleFetch, status } = useFetch<LoginSchema, void>({
+    fetchFunction: onSubmit,
     validateSchema: loginSchema,
   });
 
   const formSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    await handleSubmit(formData);
+    await handleFetch(formData);
   };
 
   useEffect(() => {
@@ -81,17 +81,13 @@ const LoginPresenter = ({ onSubmit }: LoginPresenterProps) => {
           <Button
             buttonProps={{
               type: "submit",
-              disabled: Object.keys(errors).length > 0 || status.isSubmitting,
+              disabled: Object.keys(errors).length > 0 || status.isFetching,
             }}
             size="md"
             color="primary"
             btnType="normal"
           >
-            {status.isSubmitting ? (
-              <Spinner size="sm" color="white" />
-            ) : (
-              "Login"
-            )}
+            {status.isFetching ? <Spinner size="sm" color="white" /> : "Login"}
           </Button>
           {status.error && <ErrorText>{status.error}</ErrorText>}
         </Form.Footer>

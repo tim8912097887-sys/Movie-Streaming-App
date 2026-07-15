@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import MoviePresenter, {
   type Movie,
 } from "../features/movie/presenter/MoviePresenter";
-import PageContainer from "../components/ui/PageContainer";
-import PaginationPresenter from "../components/layout/pagination/PaginationPresenter";
+import PageContainer from "../shared/components/ui/PageContainer";
+import PaginationPresenter from "../shared/components/layout/pagination/PaginationPresenter";
+import useFetch from "../shared/hooks/useFetch";
 
 const movies: Movie[] = [
   {
@@ -64,49 +65,46 @@ const movies: Movie[] = [
   },
 ];
 
-type FetchMoviesData = {
-  totalPage: number;
-  currentPage: number;
-  data: Movie[];
+// type FetchMoviesData = {
+//   totalPage: number;
+//   currentPage: number;
+//   data: Movie[];
+// };
+
+const fetchMovies = async (page: number) => {
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+  const response = {
+    totalPage: 20,
+    currentPage: page,
+    data: movies,
+  };
+  return response;
 };
 
 const HomePage = () => {
-  const [fetchMoviesData, setFetchMoviesData] = useState<FetchMoviesData>({
-    totalPage: 0,
-    currentPage: 0,
-    data: [],
+  const { handleFetch, status } = useFetch({
+    fetchFunction: fetchMovies,
   });
 
-  const fetchMovies = async (page: number) => {
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    const response = {
-      totalPage: 20,
-      currentPage: page,
-      data: movies,
-    };
-    return response;
-  };
-
-  const handlePageChange = async (page: number) => {
-    const response = await fetchMovies(page);
-    setFetchMoviesData(response);
-  };
-
   useEffect(() => {
-    const fetchData = async () => {
-      const response = await fetchMovies(1);
-      setFetchMoviesData(response);
+    const fetchMoviesData = async () => {
+      await handleFetch(1);
     };
-    fetchData();
+
+    fetchMoviesData();
   }, []);
 
   return (
     <PageContainer customClass="flex-col gap-4">
-      <MoviePresenter movies={fetchMoviesData.data} />
+      <MoviePresenter
+        movies={status.fetchedData?.data || []}
+        isLoading={status.isFetching}
+      />
       <PaginationPresenter
-        totalPage={fetchMoviesData.totalPage}
-        currentPage={fetchMoviesData.currentPage}
-        onPageChange={handlePageChange}
+        totalPage={status.fetchedData?.totalPage || 0}
+        currentPage={status.fetchedData?.currentPage || 0}
+        onPageChange={handleFetch}
+        isLoading={status.isFetching}
       />
     </PageContainer>
   );
