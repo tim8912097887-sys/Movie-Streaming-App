@@ -8,11 +8,11 @@ import ErrorText from "../../../shared/components/ui/ErrorText";
 import useFetch from "../../../shared/hooks/useFetch";
 import { Spinner } from "../../../shared/components/ui/Spinner";
 import { useNavigate } from "react-router";
-import { useEffect } from "react";
 import { toast } from "react-toastify";
+import type { LoginData } from "../../../shared/schema/data/login";
 
 type LoginPresenterProps = {
-  onSubmit: (data: LoginSchema) => Promise<void>;
+  onSubmit: (data: LoginSchema) => Promise<LoginData>;
 };
 
 const LoginPresenter = ({ onSubmit }: LoginPresenterProps) => {
@@ -25,7 +25,7 @@ const LoginPresenter = ({ onSubmit }: LoginPresenterProps) => {
     schemaValidater: loginSchema,
   });
 
-  const { handleFetch, status } = useFetch<LoginSchema, void>({
+  const { handleFetch, status } = useFetch<LoginSchema, LoginData>({
     fetchFunction: onSubmit,
     validateSchema: loginSchema,
   });
@@ -35,15 +35,13 @@ const LoginPresenter = ({ onSubmit }: LoginPresenterProps) => {
     await handleFetch(formData);
   };
 
-  useEffect(() => {
-    if (status.isSuccess) {
-      toast.success("Login successfully", {
-        autoClose: 1500,
-        position: "top-right",
-        onClose: () => navigate("/recommendations"),
-      });
-    }
-  }, [status.isSuccess]);
+  if (status.isSuccess) {
+    toast.success("Login successfully", {
+      autoClose: 1500,
+      position: "top-right",
+      onClose: () => navigate("/recommendations"),
+    });
+  }
 
   return (
     <div className="w-70 md:w-100 rounded-xl border border-gray-200 bg-slate-300 p-8 shadow-lg md:p-12">
@@ -81,7 +79,10 @@ const LoginPresenter = ({ onSubmit }: LoginPresenterProps) => {
           <Button
             buttonProps={{
               type: "submit",
-              disabled: Object.keys(errors).length > 0 || status.isFetching,
+              disabled:
+                Object.keys(errors).length > 0 ||
+                status.isFetching ||
+                status.isSuccess,
             }}
             size="md"
             color="primary"

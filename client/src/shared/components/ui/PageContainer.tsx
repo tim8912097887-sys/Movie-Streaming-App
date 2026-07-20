@@ -9,7 +9,7 @@ const PageContainer = ({ children, customClass }: PageContainerProps) => {
   return (
     <div
       className={twMerge(
-        `flex min-h-full items-center justify-center py-8 md:py-12`,
+        `flex min-h-96 items-center justify-center py-8 md:py-12`,
         customClass,
       )}
     >
