@@ -14,7 +14,7 @@ import (
 )
 
 type MovieService interface {
-	GetMovies(ctx context.Context,paginationParams types.PaginationParams) ([]MovieDTO,error)
+	GetMovies(ctx context.Context,paginationParams types.PaginationParams) ([]MovieDTO, int,error)
     GetUserMovie(ctx context.Context,userId string,tokenVersion int) ([]MovieDTO,error)
 }
 
@@ -50,7 +50,7 @@ func (h *Handler) GetMovies(c *gin.Context) {
 		return
 	}
 
-	movies, err := h.movieService.GetMovies(c.Request.Context(), paginationParams)
+	movies, totalPages, err := h.movieService.GetMovies(c.Request.Context(), paginationParams)
 
 	// Timeout or cancel error
 	if errors.Is(err, context.DeadlineExceeded) {
@@ -70,7 +70,13 @@ func (h *Handler) GetMovies(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, response.NewSuccessResponse(movies))
+	paginationResponse := PaginationResponse{
+		Movies: movies,
+		TotalPage: totalPages,
+		CurrentPage: paginationParams.Page,
+	}
+
+	c.JSON(http.StatusOK, response.NewSuccessResponse(paginationResponse))
 }
 
 func (h *Handler) GetUserMovie(c *gin.Context) {
@@ -126,5 +132,11 @@ func (h *Handler) GetUserMovie(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, response.NewSuccessResponse(movies))
+	paginationResponse := PaginationResponse{
+		Movies: movies,
+		TotalPage: 1,
+		CurrentPage: 1,
+	}
+
+	c.JSON(http.StatusOK, response.NewSuccessResponse(paginationResponse))
 }

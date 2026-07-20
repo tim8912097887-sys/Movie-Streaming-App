@@ -15,7 +15,7 @@ type UserRepository interface {
 }
 
 type MovieRepository interface {
-	GetMovies(ctx context.Context, paginationParams types.PaginationParams) ([]types.Movie,error)
+	GetMovies(ctx context.Context, paginationParams types.PaginationParams) ([]types.Movie,int,error)
     GetMoviesByGenres(ctx context.Context, genres []types.Genres) ([]types.Movie,error)
 	GetMovieById(ctx context.Context, id string) (types.Movie, error)
 }
@@ -32,10 +32,10 @@ func NewMovieService(repository MovieRepository, userRepository UserRepository) 
 	}
 }
 
-func (s *service) GetMovies(ctx context.Context, paginationParams types.PaginationParams) ([]MovieDTO,error) {
-	movies, err := s.repository.GetMovies(ctx, paginationParams)
+func (s *service) GetMovies(ctx context.Context, paginationParams types.PaginationParams) ([]MovieDTO, int,error) {
+	movies, totalPages, err := s.repository.GetMovies(ctx, paginationParams)
 	if err != nil {
-	   return []MovieDTO{}, err	
+	   return []MovieDTO{}, totalPages, err	
 	}
 
 	var moviesDTO = make([]MovieDTO,len(movies))
@@ -44,7 +44,7 @@ func (s *service) GetMovies(ctx context.Context, paginationParams types.Paginati
 		moviesDTO[i] = s.DataToDTO(movie)
 	}
 
-	return moviesDTO, nil
+	return moviesDTO, totalPages, nil
 }
 
 func (s *service) GetUserMovie(ctx context.Context, userId string,tokenVersion int) ([]MovieDTO,error) {

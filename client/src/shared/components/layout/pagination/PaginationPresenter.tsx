@@ -113,18 +113,20 @@ const PaginationPresenter = ({
         <PageButton buttonProps={{ disabled: true }}>...</PageButton>
       )}
 
-      <PageButton
-        isActive={currentPage == totalPage}
-        buttonProps={{
-          disabled: isLoading,
-          onClick: () => {
-            onPageChange(totalPage);
-            setAttemptedPage(totalPage);
-          },
-        }}
-      >
-        {totalPage}
-      </PageButton>
+      {totalPage > 1 && (
+        <PageButton
+          isActive={currentPage == totalPage}
+          buttonProps={{
+            disabled: isLoading,
+            onClick: () => {
+              onPageChange(totalPage);
+              setAttemptedPage(totalPage);
+            },
+          }}
+        >
+          {totalPage}
+        </PageButton>
+      )}
       {currentPage == totalPage ? (
         <PageButton customClass="w-15" buttonProps={{ disabled: true }}>
           Next

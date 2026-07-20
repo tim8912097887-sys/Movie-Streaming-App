@@ -24,7 +24,7 @@ type UserRepository interface {
 }
 
 type MovieRepository interface {
-	GetMovies(ctx context.Context, paginationParams types.PaginationParams) ([]types.Movie,error)
+	GetMovies(ctx context.Context, paginationParams types.PaginationParams) ([]types.Movie,int,error)
     GetMoviesByGenres(ctx context.Context, genres []types.Genres) ([]types.Movie,error)
 	GetMovieById(ctx context.Context, id string) (types.Movie, error)
 	UpdateMovie(ctx context.Context, movie types.UpdateMovieSchema) error
