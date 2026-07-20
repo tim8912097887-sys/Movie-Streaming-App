@@ -4,6 +4,7 @@ import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
 import RecommandationPage from "../pages/RecommandationPage";
 import HomePage from "../pages/HomePage";
+import AuthGuard from "./guards/AuthGuard";
 
 const router = createBrowserRouter([
   {
@@ -15,7 +16,11 @@ const router = createBrowserRouter([
       },
       {
         path: "/recommendations",
-        element: <RecommandationPage />,
+        element: (
+          <AuthGuard>
+            <RecommandationPage />
+          </AuthGuard>
+        ),
       },
       {
         path: "/login",

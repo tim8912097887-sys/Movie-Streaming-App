@@ -12,3 +12,9 @@ type MovieDTO struct {
 	Rating      float64       `json:"rating" bson:"rating"`
 	PosterURL   string        `json:"poster_url" bson:"poster_url"`
 }
+
+type PaginationResponse struct {
+	Movies []MovieDTO `json:"movies" bson:"movies"`
+	TotalPage int        `json:"total_page" bson:"total_page"`
+	CurrentPage int `json:"current_page" bson:"current_page"`
+}

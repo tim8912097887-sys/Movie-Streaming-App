@@ -19,7 +19,7 @@ export const loginUser = axiosWrapper<LoginSchema, LoginData>(
   },
 );
 
-export const logoutUser = async () => {
+export const logoutUser = axiosWrapper<string, void>(async () => {
   async (access_token: string) => {
     await authApi.post(
       "/logout",
@@ -33,4 +33,4 @@ export const logoutUser = async () => {
       },
     );
   };
-};
+});

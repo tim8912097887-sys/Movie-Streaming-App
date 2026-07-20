@@ -7,6 +7,12 @@ const BUTTON_SIZES = {
 const BUTTON_COLORS = {
   primary: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500",
   secondary: "bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-400",
+  quaternary: "bg-gray-100 text-gray-800 hover:bg-gray-200 focus:ring-gray-400",
+  success:
+    "bg-emerald-500 text-white hover:bg-emerald-600 focus:ring-emerald-500",
+  danger: "bg-rose-500 text-white hover:bg-rose-600 focus:ring-rose-500",
+  warning: "bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-yellow-500",
+  info: "bg-sky-500 text-white hover:bg-sky-600 focus:ring-sky-500",
 };
 
 const BUTTON_TYPES = {

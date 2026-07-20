@@ -20,28 +20,56 @@ func NewMovieRepository(collection *mongo.Collection) *repository {
 	}
 }
 
-func (r *repository) GetMovies(ctx context.Context, paginationParams types.PaginationParams) ([]types.Movie, error) {
+func (r *repository) GetMovies(
+	ctx context.Context,
+	paginationParams types.PaginationParams,
+) ([]types.Movie, int, error) {
+
+	// Gaurd clause
+	if paginationParams.Limit <= 0 {
+        paginationParams.Limit = 10 // Default limit fallback
+    }
+	page := paginationParams.Page
+    if page < 1 {
+        page = 1
+    }
+	filter := bson.D{}
+
+	totalCount64, err := r.collection.CountDocuments(ctx, filter)
+	if err != nil {
+		return nil, 0, err
+	}
+
+    total := int(totalCount64)
+	
+	if total == 0 {
+        return []types.Movie{}, 0, nil
+    }
+
+	limit := paginationParams.Limit
+    totalPage := (total + limit - 1) / limit
+
 	sortCriteria := bson.D{
 		{Key: "created_at", Value: -1},
 	}
-	option := options.Find().SetSort(sortCriteria).SetSkip(int64(paginationParams.Offset)).SetLimit(int64(paginationParams.Limit))
 
-	cursor, err := r.collection.Find(ctx, bson.D{}, option)
+	opts := options.Find().
+		SetSort(sortCriteria).
+		SetSkip(int64((paginationParams.Page - 1) * paginationParams.Limit)).
+		SetLimit(int64(paginationParams.Limit))
+
+	cursor, err := r.collection.Find(ctx, filter, opts)
 	if err != nil {
-		return []types.Movie{}, err
+		return nil, 0, err
 	}
-
 	defer cursor.Close(ctx)
 
 	var movies []types.Movie
-
-	err = cursor.All(ctx, &movies)
-
-	if err != nil {
-		return []types.Movie{}, err
+	if err := cursor.All(ctx, &movies); err != nil {
+		return nil, 0, err
 	}
 
-	return movies, nil
+	return movies, totalPage, nil
 }
 
 func (r *repository) GetMoviesByGenres(ctx context.Context, genres []types.Genres) ([]types.Movie, error) {
@@ -51,7 +79,7 @@ func (r *repository) GetMoviesByGenres(ctx context.Context, genres []types.Genre
 		generesIds[i] = genre.GenreID
 	}
 
-	option := options.Find().SetSort(bson.D{{Key: "created_at", Value: -1}}).SetLimit(5)
+	option := options.Find().SetSort(bson.D{{Key: "created_at", Value: -1}}).SetLimit(8)
 	filter := bson.M{"genres.genre_id": bson.M{"$in": generesIds}}
  
 	cursor, err := r.collection.Find(ctx, filter, option)

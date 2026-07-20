@@ -10,6 +10,7 @@ import { Spinner } from "../../../shared/components/ui/Spinner";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import type { LoginData } from "../../../shared/schema/data/login";
+import { useAuthStore } from "../store/store";
 
 type LoginPresenterProps = {
   onSubmit: (data: LoginSchema) => Promise<LoginData>;
@@ -17,6 +18,7 @@ type LoginPresenterProps = {
 
 const LoginPresenter = ({ onSubmit }: LoginPresenterProps) => {
   const navigate = useNavigate();
+  const login = useAuthStore((state) => state.login);
   const { formData, handleChange, errors } = useFormData<LoginSchema>({
     initialValues: {
       email: "",
@@ -35,11 +37,15 @@ const LoginPresenter = ({ onSubmit }: LoginPresenterProps) => {
     await handleFetch(formData);
   };
 
+  // Notify user login successfully and redirect to recommandation page
   if (status.isSuccess) {
     toast.success("Login successfully", {
       autoClose: 1500,
       position: "top-right",
-      onClose: () => navigate("/recommendations"),
+      onClose: () => {
+        navigate("/recommendations");
+        login(status.fetchedData?.access_token || "");
+      },
     });
   }
 

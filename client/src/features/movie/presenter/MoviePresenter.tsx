@@ -1,15 +1,9 @@
+import type { MovieData } from "../../../shared/schema/data/movies";
 import Card from "../ui/Card";
 import CardSkeleton from "../ui/CardSkeleton";
 
-export type Movie = {
-  title: string;
-  description: string;
-  image: string;
-  rating: number;
-};
-
 type MoviePresenterProps = {
-  movies: Movie[];
+  movies: MovieData[];
   isLoading: boolean;
 };
 
@@ -40,7 +34,7 @@ const MoviePresenter = ({ movies, isLoading }: MoviePresenterProps) => {
         <Card key={key}>
           <Card.Head>
             <img
-              src={movie.image}
+              src={movie.poster_url}
               alt={movie.title}
               className="w-full h-full object-cover"
             />
