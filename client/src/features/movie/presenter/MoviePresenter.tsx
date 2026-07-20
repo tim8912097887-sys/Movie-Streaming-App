@@ -24,6 +24,16 @@ const MoviePresenter = ({ movies, isLoading }: MoviePresenterProps) => {
     );
   }
 
+  if (movies.length === 0) {
+    return (
+      <div className="h-1/2 w-full flex items-center justify-center">
+        <p className="text-2xl font-bold text-black tracking-tight">
+          No movies found
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 justify-items-center">
       {movies.map((movie, key) => (

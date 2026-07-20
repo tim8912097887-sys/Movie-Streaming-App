@@ -6,6 +6,7 @@ type PaginationPresenterProps = {
   currentPage: number;
   onPageChange: (page: number) => void;
   isLoading: boolean;
+  setAttemptedPage: (page: number) => void;
 };
 
 const PaginationPresenter = ({
@@ -13,9 +14,15 @@ const PaginationPresenter = ({
   currentPage,
   onPageChange,
   isLoading,
+  setAttemptedPage,
 }: PaginationPresenterProps) => {
-  if (isLoading && (totalPage == 0 || currentPage == 0))
+  if (isLoading && (totalPage === 0 || currentPage === 0))
     return <PaginationSkeleton />;
+
+  if (totalPage === 0 || currentPage === 0)
+    return (
+      <div className="text-gray-400 text-center p-4">No pages to display.</div>
+    );
 
   const pageArray = [currentPage - 1, currentPage, currentPage + 1];
 
@@ -30,14 +37,23 @@ const PaginationPresenter = ({
           customClass="w-15"
           buttonProps={{
             disabled: isLoading,
-            onClick: () => onPageChange(currentPage - 1),
+            onClick: () => {
+              onPageChange(currentPage - 1);
+              setAttemptedPage(currentPage - 1);
+            },
           }}
         >
           Prev
         </PageButton>
       )}
       <PageButton
-        buttonProps={{ disabled: isLoading, onClick: () => onPageChange(1) }}
+        buttonProps={{
+          disabled: isLoading,
+          onClick: () => {
+            onPageChange(1);
+            setAttemptedPage(1);
+          },
+        }}
         isActive={currentPage == 1}
       >
         1
@@ -45,7 +61,13 @@ const PaginationPresenter = ({
 
       {currentPage - 2 == 2 && (
         <PageButton
-          buttonProps={{ disabled: isLoading, onClick: () => onPageChange(2) }}
+          buttonProps={{
+            disabled: isLoading,
+            onClick: () => {
+              onPageChange(2);
+              setAttemptedPage(2);
+            },
+          }}
         >
           2
         </PageButton>
@@ -60,7 +82,10 @@ const PaginationPresenter = ({
           <PageButton
             buttonProps={{
               disabled: isLoading,
-              onClick: () => onPageChange(page),
+              onClick: () => {
+                onPageChange(page);
+                setAttemptedPage(page);
+              },
             }}
             isActive={page == currentPage}
             key={page}
@@ -74,7 +99,10 @@ const PaginationPresenter = ({
         <PageButton
           buttonProps={{
             disabled: isLoading,
-            onClick: () => onPageChange(totalPage - 1),
+            onClick: () => {
+              onPageChange(totalPage - 1);
+              setAttemptedPage(totalPage - 1);
+            },
           }}
         >
           {totalPage - 1}
@@ -89,7 +117,10 @@ const PaginationPresenter = ({
         isActive={currentPage == totalPage}
         buttonProps={{
           disabled: isLoading,
-          onClick: () => onPageChange(totalPage),
+          onClick: () => {
+            onPageChange(totalPage);
+            setAttemptedPage(totalPage);
+          },
         }}
       >
         {totalPage}
@@ -103,7 +134,10 @@ const PaginationPresenter = ({
           customClass="w-15"
           buttonProps={{
             disabled: isLoading,
-            onClick: () => onPageChange(currentPage + 1),
+            onClick: () => {
+              onPageChange(currentPage + 1);
+              setAttemptedPage(currentPage + 1);
+            },
           }}
         >
           Next

@@ -9,8 +9,8 @@ import { useFormData } from "../hook/useFormData";
 import ErrorText from "../../../shared/components/ui/ErrorText";
 import useFetch from "../../../shared/hooks/useFetch";
 import { Spinner } from "../../../shared/components/ui/Spinner";
-import { useEffect } from "react";
 import { toast } from "react-toastify";
+import type { RegisterData } from "../../../shared/schema/data/register";
 
 const genres = [
   { genre_id: 1, name: "Comedy" },
@@ -25,7 +25,7 @@ const genres = [
 ];
 
 type RegisterPresenterProps = {
-  onSubmit: (data: RegisterSchema) => Promise<void>;
+  onSubmit: (data: RegisterSchema) => Promise<RegisterData>;
 };
 
 const RegisterPresenter = ({ onSubmit }: RegisterPresenterProps) => {
@@ -44,7 +44,7 @@ const RegisterPresenter = ({ onSubmit }: RegisterPresenterProps) => {
     handleChange({ target: { name: "favorite_genres", value: genres } } as any);
   };
 
-  const { handleFetch, status } = useFetch<RegisterSchema, void>({
+  const { handleFetch, status } = useFetch<RegisterSchema, RegisterData>({
     fetchFunction: onSubmit,
     validateSchema: registerSchema,
   });
@@ -54,15 +54,13 @@ const RegisterPresenter = ({ onSubmit }: RegisterPresenterProps) => {
     await handleFetch(formData);
   };
 
-  useEffect(() => {
-    if (status.isSuccess) {
-      toast.success("Register successfully", {
-        autoClose: 1500,
-        position: "top-right",
-        onClose: () => navigate("/login"),
-      });
-    }
-  }, [status.isSuccess]);
+  if (status.isSuccess) {
+    toast.success("Register successfully", {
+      autoClose: 1500,
+      position: "top-right",
+      onClose: () => navigate("/login"),
+    });
+  }
 
   return (
     <div className="w-70 md:w-100 rounded-xl border border-gray-200 bg-slate-300 p-8 shadow-lg md:p-12">
@@ -121,7 +119,10 @@ const RegisterPresenter = ({ onSubmit }: RegisterPresenterProps) => {
           <Button
             buttonProps={{
               type: "submit",
-              disabled: Object.keys(errors).length > 0 || status.isFetching,
+              disabled:
+                Object.keys(errors).length > 0 ||
+                status.isFetching ||
+                status.isSuccess,
             }}
             size="md"
             color="primary"

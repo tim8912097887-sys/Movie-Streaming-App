@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import MoviePresenter, {
   type Movie,
 } from "../features/movie/presenter/MoviePresenter";
 import PageContainer from "../shared/components/ui/PageContainer";
 import PaginationPresenter from "../shared/components/layout/pagination/PaginationPresenter";
 import useFetch from "../shared/hooks/useFetch";
+import ErrorFallback from "../shared/components/ui/ErrorFallback";
 
 const movies: Movie[] = [
   {
@@ -78,13 +79,16 @@ const fetchMovies = async (page: number) => {
     currentPage: page,
     data: movies,
   };
-  return response;
+  if (Math.random() > 0.6) return response;
+  throw new Error("Failed to retrieve movies.");
 };
 
 const HomePage = () => {
   const { handleFetch, status } = useFetch({
     fetchFunction: fetchMovies,
   });
+
+  const [attemptedPage, setAttemptedPage] = useState(1);
 
   useEffect(() => {
     const fetchMoviesData = async () => {
@@ -94,6 +98,21 @@ const HomePage = () => {
     fetchMoviesData();
   }, []);
 
+  const handleRetry = () => {
+    handleFetch(attemptedPage);
+  };
+
+  if (status.error && !status.fetchedData && !status.isFetching) {
+    return (
+      <PageContainer customClass="justify-center items-center">
+        <ErrorFallback
+          message={status.error || "Failed to retrieve movies."}
+          onRetry={handleRetry}
+        />
+      </PageContainer>
+    );
+  }
+
   return (
     <PageContainer customClass="flex-col gap-4">
       <MoviePresenter
@@ -101,6 +120,7 @@ const HomePage = () => {
         isLoading={status.isFetching}
       />
       <PaginationPresenter
+        setAttemptedPage={setAttemptedPage}
         totalPage={status.fetchedData?.totalPage || 0}
         currentPage={status.fetchedData?.currentPage || 0}
         onPageChange={handleFetch}

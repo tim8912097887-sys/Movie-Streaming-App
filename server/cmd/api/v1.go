@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/tim8912097887-sys/server/internal/admin"
 	"github.com/tim8912097887-sys/server/internal/auth"
@@ -31,6 +32,15 @@ type Api struct {
 
 func (a *Api) Mount(dbClient *mongo.Client,geminiClient *genai.Client) http.Handler {
 	router := gin.Default()
+
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost"},
+		AllowMethods:     []string{"POST", "GET", "DELETE", "PATCH"},
+		AllowHeaders:     []string{"Origin","Content-Type","Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge: 12 * time.Hour,
+	}))
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, response.NewSuccessResponse(map[string]string{
