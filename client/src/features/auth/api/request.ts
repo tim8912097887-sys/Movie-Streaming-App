@@ -15,26 +15,22 @@ export const registerUser = axiosWrapper<RegisterSchema, RegisterData>(
 
 export const loginUser = axiosWrapper<LoginSchema, LoginData>(
   async (data: LoginSchema) => {
-    const response = await authApi.post("/login", data);
+    const response = await authApi.post("/login", data, {
+      withCredentials: true,
+    });
     return response.data.data;
   },
 );
 
-export const logoutUser = axiosWrapper<string, void>(
-  async (access_token: string) => {
-    await authApi.post(
-      "/logout",
-      {},
-      {
-        withCredentials: true,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access_token}`,
-        },
-      },
-    );
-  },
-);
+export const logoutUser = axiosWrapper<void, void>(async () => {
+  await authApi.post(
+    "/logout",
+    {},
+    {
+      withCredentials: true,
+    },
+  );
+});
 
 export const getGenres = axiosWrapper<void, GenresData>(async () => {
   const response = await authApi.get("/genres");
