@@ -58,7 +58,8 @@ func (a *Api) Mount(dbClient *mongo.Client,geminiClient *genai.Client) http.Hand
 	jwtService := auth.NewJWTService()
 	refreshTokenMiddleware := middlewares.RefreshTokenMiddleware(jwtService, a.Config.EnvConfigs.RefreshTokenSecret)
 	userCollection := dbClient.Database(a.Config.EnvConfigs.DbName).Collection("users")
-	userRepository := users.NewUserRepository(userCollection)
+	genresCollection := dbClient.Database(a.Config.EnvConfigs.DbName).Collection("genres")
+	userRepository := users.NewUserRepository(userCollection, genresCollection)
 	userServiceConfig := users.UserServiceConfig{PasswordService: passwordService, JWTService: jwtService, EnvConfigs: a.Config.EnvConfigs, Repository: userRepository}
 	userService := users.NewUserService(userServiceConfig)
 	userHandlerConfig := users.UserHandlerConfig{UserService: userService, Logger: a.Config.Logger}

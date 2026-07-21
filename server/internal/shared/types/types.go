@@ -17,6 +17,7 @@ type User struct {
 }
 
 type Genres struct {
+	ID      bson.ObjectID `json:"id" bson:"_id,omitempty"`
 	GenreID int    `json:"genre_id" bson:"genre_id" validate:"required,numeric"`
 	Name    string `json:"name" bson:"name" validate:"required"`
 }

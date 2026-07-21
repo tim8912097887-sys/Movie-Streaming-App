@@ -1,4 +1,5 @@
 import { axiosWrapper } from "../../../shared/api/axios-wrapper";
+import type { GenresData } from "../../../shared/schema/data/genres";
 import type { LoginData } from "../../../shared/schema/data/login";
 import type { RegisterData } from "../../../shared/schema/data/register";
 import type { LoginSchema } from "../schema/login";
@@ -33,4 +34,9 @@ export const logoutUser = axiosWrapper<string, void>(async () => {
       },
     );
   };
+});
+
+export const getGenres = axiosWrapper<void, GenresData>(async () => {
+  const response = await authApi.get("/genres");
+  return response.data.data;
 });

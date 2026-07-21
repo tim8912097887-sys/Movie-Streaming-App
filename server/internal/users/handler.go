@@ -14,6 +14,7 @@ import (
 )
 
 type UserService interface {
+	getGenres(ctx context.Context) ([]GenreDTO, error)
     createUser(ctx context.Context, user types.CreateUserSchema) (UserDTO, error)
     loginUser(ctx context.Context, user LoginUserSchema) (TokenResponse, error)
 	logoutUser(ctx context.Context, userId string,tokenVersion int) error
@@ -38,10 +39,35 @@ func NewUserHandler(userHandlerConfig UserHandlerConfig) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(r *gin.RouterGroup,refreshTokenMiddleware gin.HandlerFunc) {
+	r.GET("/genres",h.GetGenres)
 	r.POST("/register",h.CreateUser)
 	r.POST("/login",h.LoginUser)
 	r.POST("/logout",refreshTokenMiddleware,h.LogoutUser)
 	r.POST("/refresh",refreshTokenMiddleware,h.RefreshToken)
+}
+
+func (h *Handler) GetGenres(c *gin.Context) {
+
+	genres, err := h.userService.getGenres(c.Request.Context())
+
+	if err != nil {
+		h.logger.Error("Failed to get genres", slog.Any("error", err))
+		// Timeout or cancel error
+		if errors.Is(err, context.DeadlineExceeded) {
+			c.JSON(http.StatusGatewayTimeout,
+				response.NewErrorResponse("REQUEST_TIMEOUT", "Request timed out"))
+			return
+		}
+
+		if errors.Is(err, context.Canceled) {
+			h.logger.Info("Request canceled", slog.Any("error", err))
+			return 
+		}
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, response.NewSuccessResponse(genres))
 }
 
 func (h *Handler) CreateUser(c *gin.Context) {

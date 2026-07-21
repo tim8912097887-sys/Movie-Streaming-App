@@ -11,17 +11,19 @@ import (
 )
 
 type repository struct{
-	collection *mongo.Collection
+	userCollection *mongo.Collection
+	genreCollection *mongo.Collection
 }
 
-func NewUserRepository(collection *mongo.Collection) *repository {
+func NewUserRepository(userCollection *mongo.Collection, genreCollection *mongo.Collection) *repository {
 	return &repository{
-		collection: collection,
+		userCollection: userCollection,
+		genreCollection: genreCollection,
 	}
 }
 
 func (r *repository) CreateUser(ctx context.Context, user types.CreateUserSchema) (types.User, error) {
-    result, err :=r.collection.InsertOne(ctx, user)
+    result, err :=r.userCollection.InsertOne(ctx, user)
 	
 	if err != nil {
 		return types.User{}, err
@@ -43,7 +45,7 @@ func (r *repository) FindUserByEmail(ctx context.Context, email string) (types.U
 	
 	var user types.User
 
-	err := r.collection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
+	err := r.userCollection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return types.User{}, shared.ErrUserNotFound
@@ -61,7 +63,7 @@ func (r *repository) FindUserById(ctx context.Context, id string) (types.User, e
 	}
 	var user types.User
 
-	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&user)
+	err = r.userCollection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return types.User{}, shared.ErrUserNotFound
@@ -78,9 +80,22 @@ func (r *repository) UpdateUser(ctx context.Context, user types.UpdateUserSchema
 	}
 
 	update := bson.M{"$set": bson.M{"token_version": user.TokenVersion}}
-	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
+	_, err = r.userCollection.UpdateOne(ctx, bson.M{"_id": objectID}, update)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (r *repository) FindAllGenres(ctx context.Context) ([]types.Genres, error) {
+	var genres []types.Genres
+	cursor, err := r.genreCollection.Find(ctx, bson.M{})
+	if err != nil {
+		return []types.Genres{}, err
+	}
+	err = cursor.All(ctx, &genres)
+	if err != nil {
+		return []types.Genres{}, err
+	}
+	return genres, nil
 }

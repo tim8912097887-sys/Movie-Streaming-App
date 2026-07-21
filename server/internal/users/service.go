@@ -24,6 +24,7 @@ type UserRepository interface {
 	FindUserByEmail(ctx context.Context, email string) (types.User, error)
 	FindUserById(ctx context.Context, id string) (types.User, error)
 	UpdateUser(ctx context.Context, user types.UpdateUserSchema) error
+	FindAllGenres(ctx context.Context) ([]types.Genres, error)
 }
 
 type UserServiceConfig struct {
@@ -47,6 +48,23 @@ func NewUserService(userServiceConfig UserServiceConfig) *service {
 		envConfigs:      userServiceConfig.EnvConfigs,
 		repository:      userServiceConfig.Repository,
 	}
+}
+
+func (s *service) getGenres(ctx context.Context) ([]GenreDTO, error) {
+
+	genres, err := s.repository.FindAllGenres(ctx)
+	if err != nil {
+		return []GenreDTO{}, err
+	}
+
+	var genresDTO []GenreDTO
+	for _, genre := range genres {
+		genresDTO = append(genresDTO, GenreDTO{
+			GenreID: genre.GenreID,
+			Name: genre.Name,
+		})
+	}
+	return genresDTO, nil
 }
 
 func (s *service) createUser(ctx context.Context, userPayload types.CreateUserSchema) (UserDTO, error) {

@@ -27,6 +27,19 @@ services:
       retries: 3
       start_period: 10s
 
+  migration:
+    image: migrate/migrate
+    container_name: migration
+    volumes:
+      - ./server/internal/db/migrations:/migrations
+      # Format: mongodb://user:pass@host:port/dbname?authSource=admin
+    command:
+      - -path=/migrations
+      - -database=mongodb://myuser:mypassword@mongo-server:27017/movie_streaming?authSource=admin
+      - up
+    depends_on:
+      mongo-server:
+        condition: service_healthy
   server:
     build:
       context: ./server
@@ -36,6 +49,8 @@ services:
     depends_on:
       mongo-server:
         condition: service_healthy
+      migration:
+        condition: service_completed_successfully
     env_file:
       - ./server/.env
     restart: always
