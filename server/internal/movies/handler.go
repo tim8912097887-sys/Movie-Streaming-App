@@ -41,7 +41,7 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup,accessMiddleware gin.Handler
 }
 
 func (h *Handler) GetMovies(c *gin.Context) {
-     
+    
 	paginationParams, err := validation.ValidateQueryParams[types.PaginationParams](c)
 
 	if err != nil {
