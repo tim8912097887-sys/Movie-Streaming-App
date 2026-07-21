@@ -12,6 +12,7 @@ import { Spinner } from "../../../shared/components/ui/Spinner";
 import { toast } from "react-toastify";
 import type { RegisterData } from "../../../shared/schema/data/register";
 import type { GenresData } from "../../../shared/schema/data/genres";
+import { useEffect } from "react";
 
 type RegisterPresenterProps = {
   onSubmit: (data: RegisterSchema) => Promise<RegisterData>;
@@ -51,13 +52,16 @@ const RegisterPresenter = ({
     await handleFetch(formData);
   };
 
-  if (status.isSuccess) {
-    toast.success("Register successfully", {
-      autoClose: 1500,
-      position: "top-right",
-      onClose: () => navigate("/login"),
-    });
-  }
+  // Notify user register successfully
+  useEffect(() => {
+    if (status.isSuccess) {
+      toast.success("Register successfully", {
+        autoClose: 1500,
+        position: "top-right",
+        onClose: () => navigate("/login"),
+      });
+    }
+  }, [status.isSuccess]);
 
   return (
     <div className="w-70 md:w-100 rounded-xl border border-gray-200 bg-slate-300 p-8 shadow-lg md:p-12">

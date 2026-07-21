@@ -11,6 +11,7 @@ import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import type { LoginData } from "../../../shared/schema/data/login";
 import { useAuthStore } from "../store/store";
+import { useEffect } from "react";
 
 type LoginPresenterProps = {
   onSubmit: (data: LoginSchema) => Promise<LoginData>;
@@ -38,16 +39,18 @@ const LoginPresenter = ({ onSubmit }: LoginPresenterProps) => {
   };
 
   // Notify user login successfully and redirect to recommandation page
-  if (status.isSuccess) {
-    toast.success("Login successfully", {
-      autoClose: 1500,
-      position: "top-right",
-      onClose: () => {
-        navigate("/recommendations");
-        login(status.fetchedData?.access_token || "");
-      },
-    });
-  }
+  useEffect(() => {
+    if (status.isSuccess) {
+      toast.success("Login successfully", {
+        autoClose: 1500,
+        position: "top-right",
+        onClose: () => {
+          navigate("/recommendations");
+          login(status.fetchedData?.access_token || "");
+        },
+      });
+    }
+  }, [status.isSuccess]);
 
   return (
     <div className="w-70 md:w-100 rounded-xl border border-gray-200 bg-slate-300 p-8 shadow-lg md:p-12">
