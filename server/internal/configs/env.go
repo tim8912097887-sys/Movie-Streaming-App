@@ -14,6 +14,7 @@ type Configs struct{
 	DbUrl string
 	DbName string
 	GEMINI_API_KEY string
+	CORS_ALLOWED_ORIGINS string
 }
 
 func InitConfigs() Configs {
@@ -27,6 +28,7 @@ func InitConfigs() Configs {
 		DbUrl: getEnv("DB_URL", "mongodb://localhost:27017"),
 		DbName: getEnv("DB_NAME", "movie_streaming"),
 		GEMINI_API_KEY: getEnv("GEMINI_API_KEY", ""),
+		CORS_ALLOWED_ORIGINS: getEnv("CORS_ALLOWED_ORIGINS", "http://localhost"),
 	}
 }
 

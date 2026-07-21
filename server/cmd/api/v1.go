@@ -34,7 +34,7 @@ func (a *Api) Mount(dbClient *mongo.Client,geminiClient *genai.Client) http.Hand
 	router := gin.Default()
 
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost"},
+		AllowOrigins:     []string{a.Config.EnvConfigs.CORS_ALLOWED_ORIGINS},
 		AllowMethods:     []string{"POST", "GET", "DELETE", "PATCH", "OPTIONS"},
 		AllowHeaders:     []string{"Origin","Content-Type","Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},

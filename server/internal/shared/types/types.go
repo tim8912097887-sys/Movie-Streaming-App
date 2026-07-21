@@ -35,8 +35,8 @@ type UpdateUserSchema struct {
 }
 
 type PaginationParams struct {
-    // If not provided, defaults to 0. Must be 0 or greater.
-	Page int `form:"page,default=0" binding:"numeric,min=0"`
+    // If not provided, defaults to 1. Must be 1 or greater.
+	Page int `form:"page,default=1" binding:"numeric,min=1"`
     
     // If not provided, defaults to 10. Must be between 1 and 100.
     Limit  int `form:"limit,default=10" binding:"numeric,gt=0,lte=100"`

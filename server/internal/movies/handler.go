@@ -66,7 +66,7 @@ func (h *Handler) GetMovies(c *gin.Context) {
 
 	if err != nil {
 		h.logger.Error("Failed to get movies", slog.Any("error", err))
-		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", err.Error()))
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", "Internal Server Error"))
 		return
 	}
 
@@ -128,7 +128,7 @@ func (h *Handler) GetUserMovie(c *gin.Context) {
 
 	if err != nil {
 		h.logger.Error("Failed to get movies", slog.Any("error", err))
-		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", err.Error()))
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", "Internal Server Error"))
 		return
 	}
 
