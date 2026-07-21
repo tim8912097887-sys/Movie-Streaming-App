@@ -3,6 +3,8 @@ package users
 import (
 	"context"
 	"errors"
+	"net/mail"
+	"strings"
 
 	"github.com/tim8912097887-sys/server/internal/shared"
 	"github.com/tim8912097887-sys/server/internal/shared/types"
@@ -42,10 +44,19 @@ func (r *repository) CreateUser(ctx context.Context, user types.CreateUserSchema
 }
 
 func (r *repository) FindUserByEmail(ctx context.Context, email string) (types.User, error) {
-	
+	email = strings.TrimSpace(email)
+	if email == "" {
+		return types.User{}, errors.New("email is required")
+	}
+
+	parsedEmail, err := mail.ParseAddress(email)
+	if err != nil || parsedEmail.Address != email {
+		return types.User{}, errors.New("invalid email format")
+	}
+
 	var user types.User
 
-	err := r.userCollection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
+	err = r.userCollection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return types.User{}, shared.ErrUserNotFound
