@@ -99,7 +99,7 @@ func (h *Handler) CreateRating(c *gin.Context) {
 	}
 	if err != nil {
 		h.logger.Error("Failed to create rating", slog.Any("error", err))
-		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", err.Error()))
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", "Internal Server Error"))
 		return
 	}
 

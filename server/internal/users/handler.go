@@ -63,7 +63,7 @@ func (h *Handler) GetGenres(c *gin.Context) {
 			h.logger.Info("Request canceled", slog.Any("error", err))
 			return 
 		}
-		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", err.Error()))
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", "Internal Server Error"))
 		return
 	}
 
@@ -102,7 +102,7 @@ func (h *Handler) CreateUser(c *gin.Context) {
 			h.logger.Info("Request canceled", slog.Any("error", err))
 			return 
 		}
-		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", err.Error()))
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", "Internal Server Error"))
 		return
 	}
 
@@ -142,7 +142,7 @@ func (h *Handler) LoginUser(c *gin.Context) {
 			h.logger.Info("Request canceled", slog.Any("error", err))
 			return 
 		}
-		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", err.Error()))
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", "Internal Server Error"))
 		return
 	}
 
@@ -201,7 +201,7 @@ func (h *Handler) LogoutUser(c *gin.Context) {
 			h.logger.Info("Request canceled", slog.Any("error", err))
 			return 
 		}
-		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", err.Error()))
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", "Internal Server Error"))
 		return
 	}
 	setCookie(c,"",-1)
@@ -261,7 +261,7 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 			h.logger.Info("Request canceled", slog.Any("error", err))
 			return 
 		}
-		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", err.Error()))
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("SERVER_ERROR", "Internal Server Error"))
 		return
 	}
 
