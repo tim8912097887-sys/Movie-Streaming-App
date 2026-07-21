@@ -15,12 +15,12 @@ const RightHeader = () => {
   });
 
   const handleLogout = async () => {
-    await handleFetch(token!);
+    await handleFetch();
   };
 
   useEffect(() => {
     if (status.error) {
-      toast.success("Logout failed", {
+      toast.error("Logout failed", {
         autoClose: 1500,
         position: "top-right",
       });
