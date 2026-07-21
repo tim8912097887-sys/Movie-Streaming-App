@@ -20,7 +20,7 @@ export const loginUser = axiosWrapper<LoginSchema, LoginData>(
   },
 );
 
-export const logoutUser = axiosWrapper<string, void>(async () => {
+export const logoutUser = axiosWrapper<string, void>(
   async (access_token: string) => {
     await authApi.post(
       "/logout",
@@ -33,8 +33,8 @@ export const logoutUser = axiosWrapper<string, void>(async () => {
         },
       },
     );
-  };
-});
+  },
+);
 
 export const getGenres = axiosWrapper<void, GenresData>(async () => {
   const response = await authApi.get("/genres");
