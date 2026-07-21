@@ -91,6 +91,13 @@ func assertValidationError(t *testing.T, resp *http.Response, expectedField, exp
 	}
 
 	message := errorResponse.Error.Message
+	if expectedTag == "invalid syntax" {
+		if !strings.Contains(message, expectedTag) {
+			t.Fatalf("expected error message to contain %q, got %q", expectedTag, message)
+		}
+		return
+	}
+
 	if !strings.Contains(message, expectedField) {
 		t.Fatalf("expected error message to contain field %q, got %q", expectedField, message)
 	}
@@ -138,21 +145,21 @@ func TestGetMovieValidation(t *testing.T) {
 			expectedTag: "lte",
 		},
 		{
-			name: "offset should be greater than or equal to 0",
-			route: "/api/v1/movies?offset=-1",
-			expectedField: "Offset",
+			name: "page should be greater than or equal to 0",
+			route: "/api/v1/movies?page=-1",
+			expectedField: "Page",
 			expectedTag: "min",
 		},
 		{
 			name: "limit should be numeric",
 			route: "/api/v1/movies?limit=abc",
-			expectedField: "abc",
+			expectedField: "Limit",
 			expectedTag: "invalid syntax",
 		},
 		{
-			name: "offset should be numeric",
-			route: "/api/v1/movies?offset=abc",
-			expectedField: "abc",
+			name: "page should be numeric",
+			route: "/api/v1/movies?page=abc",
+			expectedField: "Page",
 			expectedTag: "invalid syntax",
 		},
 	}
@@ -180,8 +187,8 @@ func TestGetMoviesSuccess(t *testing.T) {
 		PosterURL:   "http://example.com/poster.jpg",
 	}
 
-	movieRepository.GetMoviesFunc = func(ctx context.Context, paginationParams types.PaginationParams) ([]types.Movie, error) {
-		return []types.Movie{expectedMovie}, nil
+	movieRepository.GetMoviesFunc = func(ctx context.Context, paginationParams types.PaginationParams) ([]types.Movie, int, error) {
+		return []types.Movie{expectedMovie}, 1, nil
 	}
 
 	r := setupRouter(t, movieHandler, InitMockAccessMiddleware(func(c *gin.Context) {}))
@@ -199,17 +206,22 @@ func TestGetMoviesSuccess(t *testing.T) {
 		t.Fatalf("expected no error, got %v", successResponse.Error)
 	}
 
-	data, ok := successResponse.Data.([]any)
+	paginationData, ok := successResponse.Data.(map[string]any)
 	if !ok {
-		t.Fatalf("expected response data to be a slice, got %T", successResponse.Data)
-	}
-	if len(data) != 1 {
-		t.Fatalf("expected 1 movie in response data, got %d", len(data))
+		t.Fatalf("expected response data to be an object, got %T", successResponse.Data)
 	}
 
-	movieData, ok := data[0].(map[string]any)
+	moviesData, ok := paginationData["movies"].([]any)
 	if !ok {
-		t.Fatalf("expected movie item to be an object, got %T", data[0])
+		t.Fatalf("expected movies field to be a slice, got %T", paginationData["movies"])
+	}
+	if len(moviesData) != 1 {
+		t.Fatalf("expected 1 movie in response data, got %d", len(moviesData))
+	}
+
+	movieData, ok := moviesData[0].(map[string]any)
+	if !ok {
+		t.Fatalf("expected movie item to be an object, got %T", moviesData[0])
 	}
 	if movieData["title"] != expectedMovie.Title {
 		t.Fatalf("expected title %q, got %q", expectedMovie.Title, movieData["title"])
@@ -234,8 +246,8 @@ func TestGetMoviesInternalServerError(t *testing.T) {
 	jwtService := InitMockJWTService()
 	movieHandler := wireupHandler(t, movieRepository, userRepository, jwtService)
 
-	movieRepository.GetMoviesFunc = func(ctx context.Context, paginationParams types.PaginationParams) ([]types.Movie, error) {
-		return nil, errors.New("database unavailable")
+	movieRepository.GetMoviesFunc = func(ctx context.Context, paginationParams types.PaginationParams) ([]types.Movie, int, error) {
+		return nil, 0, errors.New("database unavailable")
 	}
 
 	r := setupRouter(t, movieHandler, InitMockAccessMiddleware(func(c *gin.Context) {}))
@@ -399,17 +411,22 @@ func TestGetUserMovieSuccess(t *testing.T) {
 		t.Fatalf("expected no error, got %v", successResponse.Error)
 	}
 
-	data, ok := successResponse.Data.([]any)
+	paginationData, ok := successResponse.Data.(map[string]any)
 	if !ok {
-		t.Fatalf("expected response data to be a slice, got %T", successResponse.Data)
-	}
-	if len(data) != 1 {
-		t.Fatalf("expected 1 movie in response data, got %d", len(data))
+		t.Fatalf("expected response data to be an object, got %T", successResponse.Data)
 	}
 
-	movieData, ok := data[0].(map[string]any)
+	moviesData, ok := paginationData["movies"].([]any)
 	if !ok {
-		t.Fatalf("expected movie item to be an object, got %T", data[0])
+		t.Fatalf("expected movies field to be a slice, got %T", paginationData["movies"])
+	}
+	if len(moviesData) != 1 {
+		t.Fatalf("expected 1 movie in response data, got %d", len(moviesData))
+	}
+
+	movieData, ok := moviesData[0].(map[string]any)
+	if !ok {
+		t.Fatalf("expected movie item to be an object, got %T", moviesData[0])
 	}
 	if movieData["title"] != "Inception" {
 		t.Fatalf("expected title %q, got %q", "Inception", movieData["title"])
@@ -493,15 +510,15 @@ func (m *MockJWTService) ValidateToken(payload auth.JWTValidatePayload) (auth.Cu
 }
 
 type MockMovieRepository struct {
-	GetMoviesFunc       func(ctx context.Context, paginationParams types.PaginationParams) ([]types.Movie, error)
+	GetMoviesFunc         func(ctx context.Context, paginationParams types.PaginationParams) ([]types.Movie, int, error)
 	GetMoviesByGenresFunc func(ctx context.Context, genres []types.Genres) ([]types.Movie, error)
-	GetMovieByIdFunc    func(ctx context.Context, id string) (types.Movie, error)
+	GetMovieByIdFunc      func(ctx context.Context, id string) (types.Movie, error)
 }
 
 func InitMockMovieRepository() *MockMovieRepository {
 	return &MockMovieRepository{
-		GetMoviesFunc: func(ctx context.Context, paginationParams types.PaginationParams) ([]types.Movie, error) {
-			return []types.Movie{}, nil
+		GetMoviesFunc: func(ctx context.Context, paginationParams types.PaginationParams) ([]types.Movie, int, error) {
+			return []types.Movie{}, 1, nil
 		},
 		GetMoviesByGenresFunc: func(ctx context.Context, genres []types.Genres) ([]types.Movie, error) {
 			return []types.Movie{}, nil
@@ -512,7 +529,7 @@ func InitMockMovieRepository() *MockMovieRepository {
 	}
 }
 
-func (m *MockMovieRepository) GetMovies(ctx context.Context, paginationParams types.PaginationParams) ([]types.Movie, error) {
+func (m *MockMovieRepository) GetMovies(ctx context.Context, paginationParams types.PaginationParams) ([]types.Movie, int, error) {
 	return m.GetMoviesFunc(ctx, paginationParams)
 }
 

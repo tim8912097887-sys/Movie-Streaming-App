@@ -395,6 +395,53 @@ func TestRegisterUserBusinessLogic(t *testing.T) {
 	})
 }
 
+func TestGetGenres(t *testing.T) {
+	t.Run("returns genres on success", func(t *testing.T) {
+		repository := InitMockUserRepository()
+		repository.FindAllGenresFunc = func(ctx context.Context) ([]types.Genres, error) {
+			return []types.Genres{{GenreID: 1, Name: "Action"}, {GenreID: 2, Name: "Comedy"}}, nil
+		}
+
+		handler := wireupHandler(t, repository, InitMockPasswordService(), InitMockJWTService())
+		resp := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/genres", nil)
+		r := setupRouter(t, handler, InitMockRefreshMiddleware(func(c *gin.Context) {}))
+		r.ServeHTTP(resp, req)
+
+		if resp.Code != http.StatusOK {
+			t.Fatalf("expected status code %d, got %d", http.StatusOK, resp.Code)
+		}
+
+		successResponse := decodeResponse[response.SuccessResponse](t, resp.Result())
+		if successResponse.State != "success" {
+			t.Fatalf("expected success state, got %s", successResponse.State)
+		}
+
+		data, ok := successResponse.Data.([]any)
+		if !ok {
+			t.Fatalf("expected response data to be a slice, got %T", successResponse.Data)
+		}
+		if len(data) != 2 {
+			t.Fatalf("expected 2 genres in response data, got %d", len(data))
+		}
+	})
+
+	t.Run("returns internal server error when repository lookup fails", func(t *testing.T) {
+		repository := InitMockUserRepository()
+		repository.FindAllGenresFunc = func(ctx context.Context) ([]types.Genres, error) {
+			return nil, errors.New("genres lookup failed")
+		}
+
+		handler := wireupHandler(t, repository, InitMockPasswordService(), InitMockJWTService())
+		resp := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/genres", nil)
+		r := setupRouter(t, handler, InitMockRefreshMiddleware(func(c *gin.Context) {}))
+		r.ServeHTTP(resp, req)
+
+		assertErrorResponse(t, resp.Result(), http.StatusInternalServerError, "SERVER_ERROR")
+	})
+}
+
 func TestLoginUserBusinessLogic(t *testing.T) {
 	t.Run("returns tokens on success", func(t *testing.T) {
 		repository := InitMockUserRepository()
@@ -564,10 +611,11 @@ func (m *MockPasswordService) CheckPasswordHash(password, hash string) bool {
 }
 
 type MockUserRepository struct {
-	CreateUserFunc     func(ctx context.Context, user types.CreateUserSchema) (types.User, error)
+	CreateUserFunc      func(ctx context.Context, user types.CreateUserSchema) (types.User, error)
 	FindUserByEmailFunc func(ctx context.Context, email string) (types.User, error)
-	FindUserByIdFunc   func(ctx context.Context, id string) (types.User, error)
-	UpdateUserFunc     func(ctx context.Context, user types.UpdateUserSchema) error
+	FindUserByIdFunc    func(ctx context.Context, id string) (types.User, error)
+	UpdateUserFunc      func(ctx context.Context, user types.UpdateUserSchema) error
+	FindAllGenresFunc   func(ctx context.Context) ([]types.Genres, error)
 }
 
 func InitMockUserRepository() *MockUserRepository {
@@ -583,6 +631,9 @@ func InitMockUserRepository() *MockUserRepository {
 		},
 		UpdateUserFunc: func(ctx context.Context, user types.UpdateUserSchema) error {
 			return nil
+		},
+		FindAllGenresFunc: func(ctx context.Context) ([]types.Genres, error) {
+			return []types.Genres{}, nil
 		},
 	}
 }
@@ -601,6 +652,10 @@ func (m *MockUserRepository) FindUserById(ctx context.Context, id string) (types
 
 func (m *MockUserRepository) UpdateUser(ctx context.Context, user types.UpdateUserSchema) error {
 	return m.UpdateUserFunc(ctx, user)
+}
+
+func (m *MockUserRepository) FindAllGenres(ctx context.Context) ([]types.Genres, error) {
+	return m.FindAllGenresFunc(ctx)
 }
 
 type MockJWTService struct {
