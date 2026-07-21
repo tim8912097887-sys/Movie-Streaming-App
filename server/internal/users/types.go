@@ -6,8 +6,13 @@ type LoginUserSchema struct {
 }
 
 type UserDTO struct {
-	Name            string     `json:"name"`
-	Email           string     `json:"email"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+type GenreDTO struct {
+	GenreID int    `json:"genre_id"`
+	Name    string `json:"name"`
 }
 
 type TokenResponse struct {
@@ -16,5 +21,5 @@ type TokenResponse struct {
 }
 
 type AccessTokenResponse struct {
-	AccessToken  string `json:"access_token"`
+	AccessToken string `json:"access_token"`
 }

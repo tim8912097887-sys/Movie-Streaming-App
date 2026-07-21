@@ -1,9 +1,9 @@
-import type { RegisterSchema } from "../schema/register";
+import type { GenresData } from "../../../shared/schema/data/genres";
 
 type GenreSelectorProps = {
-  genres: RegisterSchema["favorite_genres"];
-  selectedGenres: RegisterSchema["favorite_genres"];
-  onChange: (genres: RegisterSchema["favorite_genres"]) => void;
+  genres: GenresData;
+  selectedGenres: GenresData;
+  onChange: (genres: GenresData) => void;
 };
 
 const GenreSelector = ({

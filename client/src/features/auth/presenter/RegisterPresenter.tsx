@@ -11,24 +11,21 @@ import useFetch from "../../../shared/hooks/useFetch";
 import { Spinner } from "../../../shared/components/ui/Spinner";
 import { toast } from "react-toastify";
 import type { RegisterData } from "../../../shared/schema/data/register";
-
-const genres = [
-  { genre_id: 1, name: "Comedy" },
-  { genre_id: 2, name: "Drama" },
-  { genre_id: 3, name: "Western" },
-  { genre_id: 4, name: "Fantasy" },
-  { genre_id: 5, name: "Thriller" },
-  { genre_id: 6, name: "Sci-Fi" },
-  { genre_id: 7, name: "Action" },
-  { genre_id: 8, name: "Mystery" },
-  { genre_id: 9, name: "Crime" },
-];
+import type { GenresData } from "../../../shared/schema/data/genres";
 
 type RegisterPresenterProps = {
   onSubmit: (data: RegisterSchema) => Promise<RegisterData>;
+  genres: GenresData;
+  isFetching: boolean;
+  fetchingError: string | null;
 };
 
-const RegisterPresenter = ({ onSubmit }: RegisterPresenterProps) => {
+const RegisterPresenter = ({
+  onSubmit,
+  genres,
+  isFetching,
+  fetchingError,
+}: RegisterPresenterProps) => {
   const navigate = useNavigate();
   const { formData, handleChange, errors } = useFormData<RegisterSchema>({
     initialValues: {
@@ -106,11 +103,16 @@ const RegisterPresenter = ({ onSubmit }: RegisterPresenterProps) => {
             />
             {errors.password && <ErrorText>{errors.password}</ErrorText>}
           </InputGroup>
-          <GenreSelector
-            genres={genres}
-            selectedGenres={formData.favorite_genres}
-            onChange={setGenres}
-          />
+          {isFetching ? (
+            <Spinner />
+          ) : (
+            <GenreSelector
+              genres={genres}
+              selectedGenres={formData.favorite_genres}
+              onChange={setGenres}
+            />
+          )}
+          {fetchingError && <ErrorText>{fetchingError}</ErrorText>}
           {errors.favorite_genres && (
             <ErrorText>{errors.favorite_genres}</ErrorText>
           )}
