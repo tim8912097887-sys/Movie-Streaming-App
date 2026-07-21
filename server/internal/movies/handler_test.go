@@ -261,8 +261,8 @@ func TestGetMoviesInternalServerError(t *testing.T) {
 	if errorResponse.Error.Code != "SERVER_ERROR" {
 		t.Fatalf("expected error code %q, got %q", "SERVER_ERROR", errorResponse.Error.Code)
 	}
-	if !strings.Contains(errorResponse.Error.Message, "database unavailable") {
-		t.Fatalf("expected error message to include %q, got %q", "database unavailable", errorResponse.Error.Message)
+	if !strings.Contains(errorResponse.Error.Message, "Internal Server Error") {
+		t.Fatalf("expected error message to include %q, got %q", "Internal Server Error", errorResponse.Error.Message)
 	}
 }
 
@@ -480,8 +480,8 @@ func TestGetUserMovieInternalServerError(t *testing.T) {
 	})
 
 	errorCtx := assertErrorResponse(t, resp, http.StatusInternalServerError, "SERVER_ERROR")
-	if !strings.Contains(errorCtx.Error.Message, "service failure") {
-		t.Fatalf("expected error message to contain %q, got %q", "service failure", errorCtx.Error.Message)
+	if !strings.Contains(errorCtx.Error.Message, "Internal Server Error") {
+		t.Fatalf("expected error message to contain %q, got %q", "Internal Server Error", errorCtx.Error.Message)
 	}
 }
 
